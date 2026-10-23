@@ -1,36 +1,33 @@
-# 日本旅行相册
+# 私人照片书架
 
-这是一个使用 Vite、Three.js 和 Quick FlipBook 构建的 3D 互动照片书项目。
-
-**在线体验：** [www.mochaweb.top](https://www.mochaweb.top/)
+这个仓库是一整个网站。访问网站根地址会先打开书架目录；目前书架收录日本旅行相册 “After the Lights”。该相册的源码保存在 `japan-book-art-edition/` 子目录中。
 
 ## 本地运行
 
+在仓库根目录运行：
+
 ```sh
-npm install
 npm run dev
 ```
 
-## 构建
+需要 Python 3.9 或更高版本。访问 <http://127.0.0.1:4180/>，也可双击 `打开书架.command`。
 
-```sh
-npm run build
-```
+## 新增一本相册
 
-静态构建文件会生成在 `dist/` 目录中。
+1. 把相册源码放进自己的子目录，例如 `albums/taiwan/`；构建后的阅读器和图片也保存在这个目录下。
+2. 在根目录 `books.js` 的 `books` 数组添加一项，设置唯一的 `id`、`title`、`paper`、`ink`、`height`、`cover`、`reader`、`pageCount` 和 `description`。
+3. `cover` 和 `reader` 使用相对于网站根目录的路径。用 `npm run build` 构建，再运行 `npm test` 确认书架链接有效。
+4. 把更新提交并推送到 `main`。Vercel 会构建网站并自动发布。
 
-## 部署到 Vercel
+## 构建和发布
 
-在 Vercel 中导入此 GitHub 仓库，并将仓库根目录设为项目目录。Vercel 会识别这是一个 Vite 项目；构建命令使用 `npm run build`，输出目录使用 `dist`。
+`npm run build` 会先安装并构建 `japan-book-art-edition/` 相册，再将书架首页和相册阅读器组装到 `site/`。Vercel 使用仓库根目录的 `vercel.json`，将 `site/` 发布为网站根目录。不要将相册子目录单独设为 Vercel 的项目根目录。
 
-项目连接到 GitHub 后，推送到 Vercel 生产分支的修改会自动触发部署。部署成功后，线上网站会更新。
+## 目录说明
 
-## 相册内容
+- 根目录的 `index.html`、`books.js`、`collection.*`、`book.*` 和 `shelf-order.js`：书架网站。
+- `japan-book-art-edition/`：当前日本旅行相册源码、设计资源和依赖配置。
+- `japan-book-art-edition/dist/`、`site/`：构建生成内容，不手工编辑。
+- `文件清单.md`：主要文件和目录的用途索引。
 
-章节数据位于 `src/books.js`。相册使用 `public/assets/spreads/` 中的跨页作品图，以及 `public/assets/pages/` 中的页面图片。可以在对应目录添加图片，并更新章节数据来扩展相册。
-
-已发布的相册包含设计完成的作品图，不包含原始照片。
-
-## 许可证
-
-第三方依赖的声明和许可证文本见 `THIRD_PARTY_NOTICES.md` 与 `THIRD_PARTY_LICENSES/`。项目模板许可证见 `LICENSE-template`。
+来源和许可证：书架使用的上游 MIT 许可证见 `LICENSE-library`；相册的第三方许可见 `japan-book-art-edition/THIRD_PARTY_NOTICES.md`。

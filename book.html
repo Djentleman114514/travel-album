@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080909" />
+    <meta name="description" content="从书架中挑选一本摄影相册，进入翻页阅读。" />
+    <title>Book — Photo Books Library</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="book.css" />
+    <script type="module" src="book.js"></script>
+  </head>
+  <body>
+    <header class="reader-header">
+      <a href="./index.html">← 返回书架</a>
+      <span id="reader-title"></span>
+    </header>
+    <main class="empty-book">
+      <h1 id="empty-title">正在打开相册</h1>
+      <p id="empty-description"></p>
+      <noscript>请启用 JavaScript 以加载相册。</noscript>
+    </main>
+    <iframe id="book-frame" title="摄影相册阅读器" hidden></iframe>
+  </body>
+</html>
