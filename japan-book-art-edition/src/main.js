@@ -16,7 +16,6 @@ import "./style.css";
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
   loading: "正在准备相册",
-  loadingPage: "正在加载下一页",
   preparing: (title) => `正在准备《${title}》`,
   open: (title) => `打开《${title}》`,
   cover: "封面",
@@ -24,7 +23,6 @@ const readerText = chinese ? {
   spread: (current, total) => `${String(current).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
 } : {
   loading: "Preparing edition",
-  loadingPage: "Loading the next page",
   preparing: (title) => `Preparing ${title}`,
   open: (title) => `Open ${title}`,
   cover: "Cover",
@@ -50,9 +48,6 @@ const PAGE_STACK_SPACING = 0.0012;
 const MAX_TEXTURE_EDGE = 1024;
 const MAX_TEXTURE_ANISOTROPY = 4;
 const CACHED_BOOK_LIMIT = 2;
-const INITIAL_PAGE_COUNT = 4;
-const PAGE_PREFETCH_WINDOW = 8;
-const PAGE_LOAD_BATCH_SIZE = 4;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#ffffff");
@@ -138,8 +133,6 @@ const edgePreview = {
 };
 const textureLoader = new THREE.TextureLoader();
 const materialCaches = new Map();
-const pageLoadPromises = new Map();
-const loadedPageIndexes = new Set();
 const recentBookIds = [];
 const memoizedSheets = new WeakSet();
 const dirtySheets = new Set();
@@ -159,7 +152,6 @@ function makePaperMaterial(map = null) {
 }
 
 const blankMaterial = makePaperMaterial();
-let activeSheets = [];
 
 function resizeTextureImage(texture) {
   const image = texture.image;
@@ -208,75 +200,6 @@ function pageMaterial(bookId, source) {
   });
   cache.set(source, request);
   return request;
-}
-
-function loadPageIntoBook(book, pageIndex, token) {
-  if (
-    token !== loadToken
-    || selectedBook.id !== book.id
-    || pageIndex < 0
-    || pageIndex >= book.pages.length
-  ) return Promise.resolve();
-  if (loadedPageIndexes.has(pageIndex)) return Promise.resolve();
-  if (pageLoadPromises.has(pageIndex)) return pageLoadPromises.get(pageIndex);
-
-  const request = pageMaterial(book.id, book.pages[pageIndex]).then((material) => {
-    if (token !== loadToken || selectedBook.id !== book.id) return;
-    const sheet = activeSheets[Math.floor(pageIndex / 2)];
-    if (!sheet) return;
-    // Quick FlipBook stores each page pair on one sheet. Even source indexes
-    // are the outside face (material slot 1); odd indexes are the inside face.
-    sheet.setPageMaterial(material, pageIndex % 2 === 0 ? 1 : 0);
-    loadedPageIndexes.add(pageIndex);
-    requestRender();
-  }).finally(() => {
-    if (pageLoadPromises.get(pageIndex) === request) pageLoadPromises.delete(pageIndex);
-  });
-  pageLoadPromises.set(pageIndex, request);
-  return request;
-}
-
-async function preloadPageWindow(book, startIndex, endIndex, token) {
-  const indexes = [];
-  for (let index = startIndex; index <= endIndex; index += 1) {
-    if (!loadedPageIndexes.has(index)) indexes.push(index);
-  }
-  for (let offset = 0; offset < indexes.length; offset += PAGE_LOAD_BATCH_SIZE) {
-    await Promise.all(
-      indexes.slice(offset, offset + PAGE_LOAD_BATCH_SIZE)
-        .map((index) => loadPageIntoBook(book, index, token)),
-    );
-    if (token !== loadToken || selectedBook.id !== book.id) return;
-  }
-}
-
-function visiblePageIndexes(targetPage, pageCount) {
-  if (pageCount <= 0) return [];
-  const page = Math.max(0, Math.min(pageCount, targetPage));
-  if (page === 0) return [0];
-  if (page >= pageCount) return [pageCount - 2, pageCount - 1].filter((index) => index >= 0);
-  return [page - 1, page];
-}
-
-async function turnToPage(targetPage) {
-  if (loading) return false;
-  const book = selectedBook;
-  const token = loadToken;
-  const target = Math.max(0, Math.min(book.pages.length, targetPage));
-  const pagesToShow = visiblePageIndexes(target, book.pages.length);
-  const mustWait = pagesToShow.some((index) => !loadedPageIndexes.has(index));
-
-  if (mustWait) {
-    setLoading(true, readerText.loadingPage);
-    requestRender();
-    await Promise.all(pagesToShow.map((index) => loadPageIntoBook(book, index, token)));
-    if (token !== loadToken || selectedBook.id !== book.id) return false;
-    setLoading(false);
-  }
-
-  flipBook.currentPage = target;
-  requestRender();
-  return true;
 }
 
 function disposeBookMaterials(bookId) {
@@ -355,33 +278,26 @@ async function selectBook(book, immediate = false) {
   clearEdgePreview(true);
   selectedBook = book;
   const token = ++loadToken;
-  loadedPageIndexes.clear();
-  pageLoadPromises.clear();
-  lastStatusKey = "";
   renderLibrary();
   setLoading(true, readerText.preparing(bookTitle(book)));
   resize();
+
+  const pageMaterials = await Promise.all(
+    book.pages.map((source) => pageMaterial(book.id, source)),
+  );
+  if (token !== loadToken) return;
 
   flipBook.scale.x = book.ratio;
   // Quick FlipBook stacks sheets downwards from the spine. Lift the whole
   // stack above the desk, including the first turned sheet in long editions.
   bookRig.position.y = Math.ceil(book.pages.length / 2) * PAGE_STACK_SPACING;
-  // Create the full paper stack immediately with blank faces, then load only
-  // the cover and opening spread before enabling the reader.
-  const pageMaterials = book.pages.map(() => blankMaterial);
   flipBook.setPages(pageMaterials);
-  activeSheets = [...flipBook];
   memoizeSheetDeformation();
   flipBook.progress = 0;
   refreshAllPageNormals();
   // Quick FlipBook assigns supplied materials through an internal promise
   // chain. Drain those microtasks before making the new edition interactive.
   for (let index = 0; index < pageMaterials.length; index += 1) await Promise.resolve();
-  if (token !== loadToken) return;
-  await Promise.all(
-    Array.from({ length: Math.min(INITIAL_PAGE_COUNT, book.pages.length) }, (_, index) =>
-      loadPageIntoBook(book, index, token)),
-  );
   if (token !== loadToken) return;
   flipBook.traverse((object) => {
     if (object.isMesh) {
@@ -540,19 +456,16 @@ function takeEdgePreviewForDrag() {
 function nextPage() {
   if (!loading && flipBook.currentPage < flipBook.totalPages) {
     clearEdgePreview(true);
-    const target = Math.min(
-      Math.ceil(flipBook.currentPage / 2) + 1,
-      Math.ceil(flipBook.totalPages / 2),
-    ) * 2;
-    void turnToPage(target);
+    flipBook.nextPage();
+    requestRender();
   }
 }
 
 function previousPage() {
   if (!loading && flipBook.currentPage > 0) {
     clearEdgePreview(true);
-    const target = Math.max(Math.ceil(flipBook.currentPage / 2) - 1, 0) * 2;
-    void turnToPage(target);
+    flipBook.previousPage();
+    requestRender();
   }
 }
 
@@ -575,9 +488,6 @@ function updateStatus() {
   updateEditionStatus(spread, selectedBook);
   previousButton.disabled = loading || shown <= 0;
   nextButton.disabled = loading || shown >= total;
-  const first = shown === 0 ? 0 : Math.max(0, shown - 1);
-  const last = Math.min(selectedBook.pages.length - 1, first + PAGE_PREFETCH_WINDOW - 1);
-  void preloadPageWindow(selectedBook, first, last, loadToken);
 }
 
 library.addEventListener("click", (event) => {
@@ -677,7 +587,8 @@ canvas.addEventListener("pointerup", (event) => {
     const elapsed = performance.now() - start.time;
     const complete = shouldCompleteDrag(start.fraction, elapsed);
     const targetSheet = start.sheet + (complete ? start.direction : 0);
-    void turnToPage(targetSheet * 2);
+    flipBook.currentPage = targetSheet * 2;
+    requestRender();
     return;
   }
 
@@ -690,7 +601,8 @@ canvas.addEventListener("pointerup", (event) => {
   } else if (start.dragReady && elapsed < 500 && Math.abs(deltaY) < 20) {
     event.clientX < window.innerWidth / 2 ? previousPage() : nextPage();
   } else if (start.startFraction > 0) {
-    void turnToPage(start.sheet * 2);
+    flipBook.currentPage = start.sheet * 2;
+    requestRender();
   }
 });
 
@@ -717,11 +629,13 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") previousPage();
   if (event.key === "Home") {
     clearEdgePreview(true);
-    void turnToPage(0);
+    flipBook.currentPage = 0;
+    requestRender();
   }
   if (event.key === "End") {
     clearEdgePreview(true);
-    void turnToPage(flipBook.totalPages);
+    flipBook.currentPage = flipBook.totalPages;
+    requestRender();
   }
 });
 
@@ -748,7 +662,8 @@ renderLibrary();
 setupEdition({ jumpTo: (spread) => {
   if (loading) return false;
   clearEdgePreview(true);
-  void turnToPage(spread * 2);
+  flipBook.currentPage = spread * 2;
+  requestRender();
   return true;
 } });
 selectBook(books[0], true);
