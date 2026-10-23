@@ -1,0 +1,16 @@
+/node_modules
+**/node_modules/
+dist/
+.DS_Store
+/.server.log
+/.server.pid
+/art-direction/
+/generation-manifest.json
+/此次修改方案.md
+/LICENSE-template
+/serve.py
+/打开相册.command
+/public/originals/
+/public/thumbs/
+/public/originals.json
+/.local-media/books/rinko/

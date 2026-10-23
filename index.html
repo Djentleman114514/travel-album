@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#ffffff"/><meta name="description" content="After the Lights — a quiet photographic journey through Japan, from city streets to the sea."/><title>After the Lights — Japan</title>
+</head>
+<body>
+<main class="app-shell">
+<header class="masthead"><h1 class="sr-only">After the Lights</h1><nav class="top-actions" aria-label="Book options"><button id="open-contents" class="text-button">Contents</button><button id="open-about" class="text-button">About</button></nav></header>
+<canvas id="book-scene" aria-label="After the Lights, interactive 3D photobook. Click, drag, or use arrow keys to turn pages."></canvas>
+<nav class="library" aria-label="Select book" id="library"></nav>
+<div class="reading-caption"><span class="chapter-kicker" id="chapter-kicker">Japan, August 2026</span><span id="chapter-label">After the Lights</span></div>
+<div class="reader-controls" aria-label="Page controls"><button class="page-button" id="previous-page" type="button" aria-label="Previous page"><span aria-hidden="true">‹</span></button><span id="page-state" aria-live="polite">Front cover</span><button class="page-button" id="next-page" type="button" aria-label="Next page"><span aria-hidden="true">›</span></button></div>
+<footer class="reader-footer"><span class="gesture-hint">Drag a page · ← →</span><button id="open-artwork" class="text-button">View spread ↗</button></footer>
+<div class="reading-progress" aria-hidden="true"><div id="progress-fill"></div></div>
+<div class="loading-card" id="loading-card" role="status" aria-live="polite" aria-hidden="true" hidden><span class="loading-pulse"></span><span class="sr-only" id="loading-copy">Preparing book</span></div>
+<p id="reader-error" role="alert" hidden>The 3D reader could not load. You can still view the designed spreads in Contents.</p>
+</main>
+<dialog id="contents-dialog" class="panel-dialog"><div class="dialog-top"><div><span class="eyebrow">CONTENTS</span><h2>From streets to sea</h2></div><button class="close-button" data-close aria-label="Close contents">×</button></div><div id="contents-grid" class="contents-grid"></div></dialog>
+<dialog id="image-dialog" class="image-dialog"><div class="image-toolbar"><span id="image-label"></span><div><button data-close class="close-button" aria-label="Close image">×</button></div></div><img id="large-image" alt=""/><p id="image-note"></p></dialog>
+<dialog id="about-dialog" class="about-dialog"><div class="dialog-top"><h2>After the Lights</h2><button class="close-button" data-close aria-label="Close about">×</button></div><p>Side streets, overhead wires, electric hours. A small window holds a pause. Beyond the railway, the sea remains.</p><p>The expanded edition: 44 photographs, 3 supplementary photographs and 7 new images, arranged in 35 spreads. Three selected wide photographs now span both pages. An independent eight-image chapter, 君の名は。, follows the city into memory, with Japanese captions and no photographs from other chapters.</p><p>The designed pages use photographic references and ImageGen. Details may differ from their photographic references.</p><p class="credits">Japan, August 2026<br/>3D Book 2 · Three.js / Quick FlipBook</p></dialog>
+<noscript>Enable JavaScript to turn the pages.</noscript>
+<script type="module" src="/src/main.js"></script>
+</body></html>
