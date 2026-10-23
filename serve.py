@@ -10,9 +10,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent / "site"
 URL = "http://127.0.0.1:4180/"
-IDENTITY = "mocha-photo-books-library"
+IDENTITY = "mocha-photo-books-library-site"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -48,6 +48,8 @@ def main():
     parser = argparse.ArgumentParser(description="本地摄影书架")
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
+    if not ROOT.is_dir():
+        raise SystemExit("网站尚未构建，请先在项目根目录运行 npm run build。")
     try:
         with urlopen(URL + "_library-health", timeout=1) as response:
             health = json.load(response)
