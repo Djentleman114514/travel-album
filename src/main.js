@@ -39,7 +39,9 @@ const pageState = document.querySelector("#page-state");
 const loadingCard = document.querySelector("#loading-card");
 const loadingCopy = document.querySelector("#loading-copy");
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-const MAX_PIXEL_RATIO = 1.5;
+// Keep the WebGL canvas sharp on high-density phone screens without
+// rendering at the full device pixel ratio, which can be expensive on mobile.
+const MAX_PIXEL_RATIO = 2;
 const SHADOW_MAP_SIZE = 1024;
 const PAGE_SUBDIVISIONS = 16;
 const PAGE_STACK_SPACING = 0.0012;
