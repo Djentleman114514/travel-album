@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Between facades — Singapore, March 2026. A photographic artist book.">
+<title>Between facades — Singapore</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body>
+<div id="stage" aria-label="Between facades, a hardcover Singapore photobook" role="img"></div>
+<div class="vignette"></div>
+
+<header class="top">
+  <div class="brand"><span class="book-title">Between facades</span><span class="en">Singapore · 2026</span></div>
+  <div class="right">
+    <a class="text-link shelf-link" href="../../index.html" target="_top">书架</a>
+  </div>
+</header>
+
+<nav class="dock" aria-label="Book navigation">
+  <div class="row">
+    <button id="prev" class="icon-btn" aria-label="Previous page" title="Previous page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>
+    </button>
+    <div class="where" id="label">Cover</div>
+    <button id="next" class="icon-btn" aria-label="Next page" title="Next page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+  <div class="dots" id="dots"></div>
+  <p class="hint" id="hint">Drag a page corner to turn it, or click a page. Arrow keys work too.</p>
+</nav>
+
+<div class="loader" id="loader">
+  <div class="loader-in">
+    <div class="book-title">Photobook</div>
+    <div class="bar"><i id="bar"></i></div>
+    <p id="loadtext">Loading pages</p>
+  </div>
+</div>
+<div class="sr" aria-live="polite" id="live"></div>
+<script src="assets/vendor/three-r128.min.js"></script>
+<script src="book-data.js"></script>
+<script src="book.js"></script>
+</body>
+</html>

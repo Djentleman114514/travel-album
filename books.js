@@ -1,4 +1,4 @@
-// The first volume opens the existing local 3D photobook. The other two are samples.
+// Finished local photobooks and one remaining sample volume.
 export const books = [
   {
     id: "after-the-lights",
@@ -12,13 +12,15 @@ export const books = [
     description: "Japan, August 2026",
   },
   {
-    id: "book-02",
-    title: "Book 02",
-    paper: "#232b2c",
-    ink: "#ece9dd",
+    id: "between-facades",
+    title: "Between facades",
+    paper: "#e6dcc7",
+    ink: "#21534d",
     height: 0.91,
-    pages: [],
-    description: "示例书 · 暂无内容",
+    cover: "albums/singapore/assets/pages/cover-right.webp",
+    reader: "albums/singapore/index.html",
+    pageCount: 46,
+    description: "Singapore, March 2026 · 35 photographs",
   },
   {
     id: "book-03",
