@@ -2,5 +2,12 @@
   "framework": null,
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": "site"
+  "outputDirectory": "site",
+  "headers": [
+    {
+      "source": "/(.*)\\.(js|css|webp|png|woff2?|ttf|svg)",
+      "has": [{ "type": "query", "key": "v", "value": "[a-f0-9]{16}" }],
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
 }

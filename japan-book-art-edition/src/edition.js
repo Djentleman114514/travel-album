@@ -1,3 +1,4 @@
+import { versionedAsset } from "../../shared/asset-url.js";
 import { books } from './books.js';
 const book = books[0];
 const backIndex = book.chapters.length + 1;
@@ -6,7 +7,7 @@ let currentSpread = 0;
 let jumpTo = () => false;
 const $ = (s) => document.querySelector(s);
 export const hasOpenDialog = () => Boolean(document.querySelector('dialog[open]'));
-const asset = (p) => `${base}${p.replace(/^\/+/, '')}`;
+const asset = (p) => versionedAsset(p, base);
 const chapter = (n) => n === 0 ? { title:'After the Lights', id:'cover' } : n === backIndex ? {title:'Back cover',id:'cover'} : book.chapters[n - 1];
 function openImage({ source, label, note }) {
   $('#large-image').src = asset(source);

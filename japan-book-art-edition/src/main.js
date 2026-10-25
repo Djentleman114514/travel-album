@@ -1,3 +1,5 @@
+import { createPageWindow, spreadFaces } from "../../shared/page-window.js";
+import { versionedAsset } from "../../shared/asset-url.js";
 import * as THREE from "three";
 import { FlipBook } from "quick_flipbook";
 import { books } from "./books.js";
@@ -41,13 +43,14 @@ const loadingCopy = document.querySelector("#loading-copy");
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 // Keep the WebGL canvas sharp on high-density phone screens without
 // rendering at the full device pixel ratio, which can be expensive on mobile.
-const MAX_PIXEL_RATIO = 2;
-const SHADOW_MAP_SIZE = 1024;
-const PAGE_SUBDIVISIONS = 16;
+const mobileReader = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
+const MAX_PIXEL_RATIO = mobileReader ? 1.5 : 2;
+const SHADOW_MAP_SIZE = mobileReader ? 512 : 1024;
+const PAGE_SUBDIVISIONS = mobileReader ? 8 : 16;
 const PAGE_STACK_SPACING = 0.0012;
 const MAX_TEXTURE_EDGE = 1024;
-const MAX_TEXTURE_ANISOTROPY = 4;
-const CACHED_BOOK_LIMIT = 2;
+const MAX_TEXTURE_ANISOTROPY = mobileReader ? 2 : 4;
+
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#ffffff");
@@ -58,9 +61,10 @@ camera.up.set(0, 0, -1);
 camera.lookAt(0, 0, 0);
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobileReader, alpha: false });
 } catch (error) {
   document.querySelector("#reader-error").hidden = false;
+  document.querySelector("#retry-pages").hidden = true;
   setupEdition({ jumpTo: () => false });
   throw error;
 }
@@ -132,12 +136,13 @@ const edgePreview = {
   target: 0,
 };
 const textureLoader = new THREE.TextureLoader();
-const materialCaches = new Map();
-const recentBookIds = [];
+let pageWindow = null;
+let navigationToken = 0;
 const memoizedSheets = new WeakSet();
 const dirtySheets = new Set();
 let animationFrame = null;
 let previousFrameTime = performance.now();
+let residentSpread = -1;
 
 function makePaperMaterial(map = null) {
   const material = new THREE.MeshStandardMaterial({
@@ -170,61 +175,51 @@ function resizeTextureImage(texture) {
   texture.image = canvas;
 }
 
-function cacheForBook(bookId) {
-  if (!materialCaches.has(bookId)) materialCaches.set(bookId, new Map());
-  return materialCaches.get(bookId);
+const whiteTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+whiteTexture.needsUpdate = true;
+
+async function loadPageTexture(source) {
+  const assetUrl = versionedAsset(source, import.meta.env.BASE_URL);
+  const texture = await textureLoader.loadAsync(assetUrl);
+  resizeTextureImage(texture);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(MAX_TEXTURE_ANISOTROPY, renderer.capabilities.getMaxAnisotropy());
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
 }
 
-function pageMaterial(bookId, source) {
-  if (!source) return Promise.resolve(blankMaterial);
-  const cache = cacheForBook(bookId);
-  if (cache.has(source)) return cache.get(source);
-
-  const assetUrl = `${import.meta.env.BASE_URL}${source.replace(/^\/+/, "")}`;
-  const request = textureLoader.loadAsync(assetUrl).then((texture) => {
-    resizeTextureImage(texture);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = Math.min(
-      MAX_TEXTURE_ANISOTROPY,
-      renderer.capabilities.getMaxAnisotropy(),
-    );
-    texture.generateMipmaps = true;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.needsUpdate = true;
-    return makePaperMaterial(texture);
-  }).catch((error) => {
-    document.querySelector("#reader-error").hidden = false;
-    console.error("Page artwork failed to load:", source, error);
-    return blankMaterial;
-  });
-  cache.set(source, request);
-  return request;
+function showPageError() {
+  document.querySelector("#reader-error-copy").textContent = "Some pages could not load. Check your connection and retry.";
+  document.querySelector("#reader-error").hidden = false;
 }
 
-function disposeBookMaterials(bookId) {
-  const cache = materialCaches.get(bookId);
-  if (!cache) return;
-  materialCaches.delete(bookId);
-  for (const request of new Set(cache.values())) {
-    request.then((material) => {
-      if (material === blankMaterial) return;
-      material.map?.dispose();
-      material.dispose();
-    });
-  }
+async function prepareSpread(spread, action = () => {}) {
+  if (!pageWindow) return false;
+  const token = ++navigationToken;
+  const cache = pageWindow;
+  const required = spreadFaces(spread, selectedBook.pages.length, 1);
+  // Keep the old view intact while a distant Contents jump loads its destination.
+  const nearby = [...spreadFaces(spread, selectedBook.pages.length, 2),
+    ...spreadFaces(Math.round(flipBook.progress), selectedBook.pages.length)];
+  document.querySelector("#reader-error").hidden = true;
+  const ready = cache.isReady(required);
+  if (!ready) setLoading(true);
+  const success = await cache.focus(required, nearby);
+  if (token !== navigationToken || cache !== pageWindow) return false;
+  if (success) action();
+  else showPageError();
+  setLoading(false);
+  updateStatus();
+  requestRender();
+  return success;
 }
 
-function rememberBook(bookId) {
-  const previousIndex = recentBookIds.indexOf(bookId);
-  if (previousIndex >= 0) recentBookIds.splice(previousIndex, 1);
-  recentBookIds.push(bookId);
-
-  const retained = new Set(recentBookIds.slice(-CACHED_BOOK_LIMIT));
-  for (const cachedBookId of materialCaches.keys()) {
-    if (!retained.has(cachedBookId)) disposeBookMaterials(cachedBookId);
-  }
-  while (recentBookIds.length > CACHED_BOOK_LIMIT) recentBookIds.shift();
+function jumpToSpread(spread) {
+  prepareSpread(spread, () => { clearEdgePreview(true); flipBook.progress = spread; });
+  return true;
 }
 
 function memoizeSheetDeformation() {
@@ -282,10 +277,19 @@ async function selectBook(book, immediate = false) {
   setLoading(true, readerText.preparing(bookTitle(book)));
   resize();
 
-  const pageMaterials = await Promise.all(
-    book.pages.map((source) => pageMaterial(book.id, source)),
-  );
-  if (token !== loadToken) return;
+  navigationToken++;
+  pageWindow?.focus([]);
+  const pageMaterials = book.pages.map(() => makePaperMaterial(whiteTexture));
+  pageWindow = createPageWindow({
+    load: index => loadPageTexture(book.pages[index]),
+    apply: (index, texture) => { pageMaterials[index].map = texture; },
+    release: (index, texture) => {
+      if (pageMaterials[index].map === texture) pageMaterials[index].map = whiteTexture;
+      texture.dispose();
+    },
+    onChange: requestRender,
+    onError: showPageError,
+  });
 
   flipBook.scale.x = book.ratio;
   // Quick FlipBook stacks sheets downwards from the spine. Lift the whole
@@ -305,10 +309,7 @@ async function selectBook(book, immediate = false) {
       object.receiveShadow = true;
     }
   });
-  rememberBook(book.id);
-  setLoading(false);
-  updateStatus();
-  requestRender();
+  await prepareSpread(0);
 }
 
 function refreshAllPageNormals() {
@@ -455,17 +456,17 @@ function takeEdgePreviewForDrag() {
 
 function nextPage() {
   if (!loading && flipBook.currentPage < flipBook.totalPages) {
-    clearEdgePreview(true);
-    flipBook.nextPage();
-    requestRender();
+    prepareSpread(Math.min(Math.ceil(flipBook.progress) + 1, flipBook.totalPages / 2), () => {
+      clearEdgePreview(true); flipBook.nextPage();
+    });
   }
 }
 
 function previousPage() {
   if (!loading && flipBook.currentPage > 0) {
-    clearEdgePreview(true);
-    flipBook.previousPage();
-    requestRender();
+    prepareSpread(Math.max(Math.floor(flipBook.progress) - 1, 0), () => {
+      clearEdgePreview(true); flipBook.previousPage();
+    });
   }
 }
 
@@ -501,6 +502,14 @@ nextButton.addEventListener("click", nextPage);
 canvas.addEventListener("pointerdown", (event) => {
   if (!event.isPrimary || loading) return;
 
+  const position = Math.round(flipBook.progress);
+  const bounds = canvas.getBoundingClientRect();
+  const direction = chooseDragDirection(position, flipBook.totalPages / 2, event.clientX, bounds.left + bounds.width / 2);
+  const destination = Math.max(0, Math.min(position + direction, flipBook.totalPages / 2));
+  if (!pageWindow?.isReady(spreadFaces(destination, selectedBook.pages.length))) {
+    prepareSpread(destination);
+    return;
+  }
   const preview = takeEdgePreviewForDrag();
   if (!preview) clearEdgePreview(true);
   const metrics = getBookScreenMetrics();
@@ -628,14 +637,10 @@ window.addEventListener("keydown", (event) => {
   }
   if (event.key === "ArrowLeft") previousPage();
   if (event.key === "Home") {
-    clearEdgePreview(true);
-    flipBook.currentPage = 0;
-    requestRender();
+    jumpToSpread(0);
   }
   if (event.key === "End") {
-    clearEdgePreview(true);
-    flipBook.currentPage = flipBook.totalPages;
-    requestRender();
+    jumpToSpread(flipBook.totalPages / 2);
   }
 });
 
@@ -659,13 +664,8 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 renderLibrary();
-setupEdition({ jumpTo: (spread) => {
-  if (loading) return false;
-  clearEdgePreview(true);
-  flipBook.currentPage = spread * 2;
-  requestRender();
-  return true;
-} });
+setupEdition({ jumpTo: jumpToSpread });
+document.querySelector("#retry-pages").addEventListener("click", () => prepareSpread(Math.round(flipBook.progress)));
 selectBook(books[0], true);
 
 function applyDragFrame() {
@@ -699,6 +699,11 @@ function animate(timestamp) {
   refreshDirtyPageNormals();
   updateStatus();
   renderer.render(scene, camera);
+  const settled = Math.round(flipBook.progress);
+  if (!loading && !pointerStart && Math.abs(settled - flipBook.progress) < 0.001 && settled !== residentSpread) {
+    residentSpread = settled;
+    pageWindow?.focus(spreadFaces(settled, selectedBook.pages.length, 1), spreadFaces(settled, selectedBook.pages.length, 2));
+  }
   const progressChanged = Math.abs(previousProgress - flipBook.progress) > 1e-7;
   if (previewNeedsFrame || (!dragOwnsFrame && progressChanged)) continueRendering();
 }

@@ -86,6 +86,25 @@ test("missing and unknown reader IDs do not silently select a different book", (
   }
 });
 
+test("published dependencies are versioned and Japan WebP artwork is copied byte for byte", async () => {
+  const helper = await readFile(new URL("site/shared/asset-url.js", import.meta.url), "utf8");
+  const version = helper.match(/ASSET_VERSION = "([a-f0-9]{16})"/)?.[1];
+  assert.ok(version, "build must replace the source version placeholder");
+  for (const path of ["index.html", "book.html", "albums/singapore/index.html", "japan-book-art-edition/dist/index.html"]) {
+    const html = await readFile(new URL("site/" + path, import.meta.url), "utf8");
+    for (const [, url] of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)) {
+      assert.equal(new URL(url, "https://example.test/").searchParams.get("v"), version, `${path}: ${url}`);
+    }
+  }
+  const base = new URL("japan-book-art-edition/public/assets/pages/", import.meta.url);
+  for (const file of await readdir(base)) {
+    if (!file.endsWith(".webp")) continue;
+    const original = await readFile(new URL(file, base));
+    const deployed = await readFile(new URL("site/japan-book-art-edition/dist/assets/pages/" + file, import.meta.url));
+    assert.ok(original.equals(deployed), `artwork changed while building: ${file}`);
+  }
+});
+
 test("saved arrangements ignore stale IDs and duplicates, appending newly added books", () => {
   const ids = ["a", "b", "c", "new"];
   const saved = ["removed", "c", "c", null, "a", { id: "b" }];

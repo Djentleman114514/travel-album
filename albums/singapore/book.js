@@ -1,6 +1,9 @@
+import { createPageWindow, spreadFaces } from "../../shared/page-window.js";
+import { versionedAsset } from "../../shared/asset-url.js";
 (() => {
   const $ = (s) => document.querySelector(s);
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileReader = matchMedia("(pointer: coarse), (max-width: 760px)").matches;
   const PI = Math.PI;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const smooth = (v) => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -27,7 +30,7 @@
   const PT = 0.0058;                 // fixed uncoated stock, preserving the default book geometry
   const HUMP = 0.011, HUMP_S = 0.07; // open pages arch out of the binding, then settle flat
   const RUN = 0.22;                  // stacked sheets fan up from the spine over this run
-  const COLS = 48, ROWS = 22, DS = W / COLS;
+  const COLS = mobileReader ? 32 : 48, ROWS = mobileReader ? 14 : 22, DS = W / COLS;
 
   // Every visible face is an existing ImageGen leaf. Opening the front board reveals
   // the first spread; closing the back board follows the final spread.
@@ -48,12 +51,12 @@
   const stage = $("#stage");
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer = new THREE.WebGLRenderer({ antialias: !mobileReader, powerPreference: "default" });
   } catch (e) {
     $("#loadtext").textContent = "This book needs WebGL, which is turned off in this browser.";
     return;
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileReader ? 1.5 : 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -61,7 +64,7 @@
   stage.appendChild(renderer.domElement);
   const canvas = renderer.domElement;
   canvas.tabIndex = 0;
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const maxAniso = Math.min(mobileReader ? 2 : 4, renderer.capabilities.getMaxAnisotropy());
 
   const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 
@@ -73,7 +76,8 @@
   const key = new THREE.DirectionalLight(lin("#ffffff"), 0.7);
   key.position.set(-2.7, 5.4, 2.3);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  const shadowSize = mobileReader ? 512 : 2048;
+  key.shadow.mapSize.set(shadowSize, shadowSize);
   Object.assign(key.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3, near: 1, far: 14 });
   key.shadow.bias = -0.0004;
   key.shadow.normalBias = 0.012;
@@ -85,14 +89,11 @@
   // ---------- textures ----------
   const manager = new THREE.LoadingManager();
   const texLoader = new THREE.TextureLoader(manager);
-  const failed = [];
-  manager.onProgress = (url, n, total) => {
-    $("#bar").style.width = Math.round((n / total) * 100) + "%";
-    $("#loadtext").textContent = `Loading pages ${n} / ${total}`;
-  };
-  manager.onError = (url) => failed.push(url);
+  let texturesDone = false, fontsDone = false, paperDone = false, pagesLoading = false;
+  let pageNavigation = 0;
+  manager.onError = url => console.warn("Optional paper texture could not load:", url);
   function tex(url, srgb, repeat) {
-    const t = texLoader.load(url);
+    const t = texLoader.load(versionedAsset(url));
     t.anisotropy = maxAniso;
     if (srgb) t.encoding = THREE.sRGBEncoding;
     if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
@@ -331,8 +332,20 @@
     return g;
   }
 
+  const blankCanvas = document.createElement("canvas");
+  blankCanvas.width = blankCanvas.height = 1;
+  blankCanvas.getContext("2d").fillStyle = "white";
+  blankCanvas.getContext("2d").fillRect(0, 0, 1, 1);
+  const faceTextures = new Map();
   function faceMap(face) {
-    return tex("assets/pages/" + face, true);
+    if (!faceTextures.has(face)) {
+      const texture = new THREE.Texture(blankCanvas);
+      texture.encoding = THREE.sRGBEncoding;
+      texture.anisotropy = maxAniso;
+      texture.needsUpdate = true;
+      faceTextures.set(face, texture);
+    }
+    return faceTextures.get(face);
   }
 
   const leaves = SPEC.map((sp, i) => {
@@ -365,7 +378,7 @@
       book.add(L.edge);
     } else {
       const front = i === 0;
-      const cover = paperMaterial({ map: tex("assets/pages/" + sp.outside, true), bumpScale: 0.003, paperAmt: 0.0,
+      const cover = paperMaterial({ map: faceMap(sp.outside), bumpScale: 0.003, paperAmt: 0.0,
         roughness: 0.46, physical: true, clearcoat: 0.38, clearcoatRoughness: 0.3,
         groove: front ? GROOVE / BBW : 1 - GROOVE / BBW, grooveDir: front ? 1 : -1, wrapBlur: true });
       const mesh = new THREE.Mesh(boardGeometry(front), cover);
@@ -380,6 +393,55 @@
     }
     return L;
   });
+
+  const faceNames = [BOOK.frontCover.file, ...BOOK.spreads.flatMap(spread => [spread.left.file, spread.right.file]), BOOK.backCover.file];
+  const pageLoader = new THREE.TextureLoader();
+  const pageWindow = createPageWindow({
+    load: index => pageLoader.loadAsync(versionedAsset("assets/pages/" + faceNames[index])),
+    apply: (index, asset) => {
+      const texture = faceMap(faceNames[index]);
+      texture.image = asset.image;
+      texture.needsUpdate = true;
+    },
+    release: (index, asset) => {
+      const texture = faceMap(faceNames[index]);
+      if (texture.image === asset.image) {
+        texture.dispose();
+        texture.image = blankCanvas;
+        texture.needsUpdate = true;
+      }
+      asset.dispose();
+    },
+    onChange: requestRender,
+    onError: () => {
+      $("#loadtext").textContent = "Some pages could not load. Check your connection and retry.";
+      $("#retry-pages").hidden = false;
+    },
+  });
+
+  async function prepareSpread(k, action = () => {}) {
+    const token = ++pageNavigation;
+    const required = spreadFaces(k, faceNames.length, 1);
+    const nearby = [...spreadFaces(k, faceNames.length, 2), ...spreadFaces(spreadIndex(), faceNames.length)];
+    if (!pageWindow.isReady(required)) {
+      pagesLoading = true;
+      $("#loader").classList.remove("done");
+      $("#loader").setAttribute("aria-hidden", "false");
+      $("#loadtext").textContent = "Preparing current pages…";
+      $("#bar").style.width = "30%";
+      $("#retry-pages").hidden = true;
+    }
+    const success = await pageWindow.focus(required, nearby);
+    if (token !== pageNavigation) return false;
+    pagesLoading = false;
+    if (!success) return false;
+    texturesDone = true;
+    action();
+    $("#bar").style.width = "100%";
+    reveal();
+    requestRender();
+    return true;
+  }
 
   // spine: black book cloth bridging the two boards, re-shaped every frame
   const SPS = 14;
@@ -474,6 +536,14 @@
   const easeOutCubic = (p) => 1 - Math.pow(1 - p, 3);
   const spreadIndex = () => leaves.reduce((n, L) => n + (L.target === 1 ? 1 : 0), 0);
   let needsRender = true;
+  let animationFrame = null;
+  let last = performance.now();
+  function requestRender() {
+    needsRender = true;
+    if (animationFrame !== null || document.hidden) return;
+    last = performance.now();
+    animationFrame = requestAnimationFrame(loop);
+  }
   let interacted = false;
 
   function turn(L, to, o = {}) {
@@ -490,6 +560,7 @@
     L.anim = { from: L.t, to, start: performance.now(), delay: o.delay || 0, dur,
       ease: o.ease || (board ? easeInOutCubic : easeInOutSine) };
     updateUI();
+    requestRender();
   }
   function topRight() {
     const L = leaves.find((l) => l.target === 0);
@@ -500,14 +571,29 @@
     for (const l of leaves) if (l.target === 1) L = l;
     return L && !L.anim && !L.dragging ? L : null;
   }
-  function next(grabY) { const L = leaves.find((l) => l.target === 0); if (L && !L.dragging) { turn(L, 1, { grabY: grabY ?? -0.6 }); noteInteraction(); } }
-  function prev(grabY) { let L = null; for (const l of leaves) if (l.target === 1) L = l; if (L && !L.dragging) { turn(L, 0, { grabY: grabY ?? -0.6 }); noteInteraction(); } }
+  function next(grabY) {
+    if (pagesLoading) return;
+    const L = leaves.find(l => l.target === 0);
+    if (L && !L.dragging) prepareSpread(spreadIndex() + 1, () => { turn(L, 1, { grabY: grabY ?? -0.6 }); noteInteraction(); });
+  }
+  function prev(grabY) {
+    if (pagesLoading) return;
+    let L = null;
+    for (const leaf of leaves) if (leaf.target === 1) L = leaf;
+    if (L && !L.dragging) prepareSpread(spreadIndex() - 1, () => { turn(L, 0, { grabY: grabY ?? -0.6 }); noteInteraction(); });
+  }
   function goTo(k) {
+    if (pagesLoading) return;
     const cur = spreadIndex();
-    const stag = reduceMotion ? 0 : 0.11;
-    if (k > cur) for (let j = cur; j < k; j++) turn(leaves[j], 1, { delay: (j - cur) * stag, dur: leaves[j].kind === "board" ? 1.0 : 0.8, grabY: -0.5 });
-    if (k < cur) for (let j = cur - 1; j >= k; j--) turn(leaves[j], 0, { delay: (cur - 1 - j) * stag, dur: leaves[j].kind === "board" ? 1.0 : 0.8, grabY: -0.5 });
-    noteInteraction();
+    prepareSpread(k, () => {
+      // Distant jumps do not animate through artwork that has not been loaded.
+      if (Math.abs(k - cur) > 1) {
+        leaves.forEach((L, i) => { L.t = L.te = L.target = i < k ? 1 : 0; L.anim = null; L.curl = L.curlTarget = L.peek = L.peekTarget = 0; });
+        updateUI();
+      } else if (k > cur) turn(leaves[cur], 1, { grabY: -0.5 });
+      else if (k < cur) turn(leaves[cur - 1], 0, { grabY: -0.5 });
+      noteInteraction();
+    });
   }
 
   // ---------- per-frame update ----------
@@ -647,7 +733,7 @@
     // lift the frame a little so the book sits clear of the bottom dock
     camera.setViewOffset(vw, vh, 0, Math.round(vh < 600 ? 18 : 26), vw, vh);
     camera.updateProjectionMatrix();
-    needsRender = true;
+    requestRender();
   }
   window.addEventListener("resize", resize);
 
@@ -666,6 +752,7 @@
   let drag = null, peekLeaf = null;
 
   function setPeek(L, grabY, side) {
+    requestRender();
     if (peekLeaf && peekLeaf !== L) { peekLeaf.peekTarget = 0; peekLeaf.curlTarget = 0; }
     peekLeaf = L;
     if (!L) return;
@@ -675,12 +762,18 @@
   }
 
   canvas.addEventListener("pointerdown", (e) => {
+    if (pagesLoading) return;
     if (e.button !== 0 && e.pointerType === "mouse") return;
     const p = pick(e);
     if (!onBook(p)) return;
     const side = p.x >= 0 ? 1 : -1;
     const L = side > 0 ? topRight() : topLeft();
     if (!L) return;
+    const destination = clamp(spreadIndex() + side, 0, NL);
+    if (!pageWindow.isReady(spreadFaces(destination, faceNames.length))) {
+      prepareSpread(destination);
+      return;
+    }
     setPeek(null);
     L.t = L.te; L.peek = 0; L.peekTarget = 0;
     L.grabY = clamp(p.y, -H / 2, H / 2);
@@ -709,7 +802,7 @@
       L.t = t;
       L.grabY = clamp(p.y, -H / 2, H / 2);
       if (L.kind === "page") L.curlTarget = side * 1.15;
-      needsRender = true;
+      requestRender();
       return;
     }
     // hover: lift the corner a touch, like a thumb on the fore-edge
@@ -722,7 +815,7 @@
       setPeek(null);
       canvas.style.cursor = "default";
     }
-    needsRender = true;
+    requestRender();
   });
 
   function endDrag(e) {
@@ -780,10 +873,11 @@
     const currentId = k === 0 ? "cover" : k === NL ? "back" : BOOK.spreads[k - 1].id;
     stage.dataset.artwork = currentId;
     history.replaceState(null, "", "#" + currentId);
+    if (texturesDone && !pagesLoading) pageWindow.focus(spreadFaces(k, faceNames.length, 1), spreadFaces(k, faceNames.length, 2));
     $("#prev").disabled = k === 0;
     $("#next").disabled = k === NL;
     [...dots.children].forEach((d, i) => d.setAttribute("aria-current", String(i === k)));
-    needsRender = true;
+    requestRender();
   }
   function noteInteraction() {
     if (interacted) return;
@@ -799,30 +893,31 @@
     cam.off = k === 0 ? -BW / 2 : k === NL ? BW / 2 : 0;
     fitW = k === 0 || k === NL ? BW : 2 * BW;
     resize();
-    requestAnimationFrame(loop);
+    requestRender();
   }
 
-  let last = performance.now();
   function loop(now) {
-    requestAnimationFrame(loop);
+    animationFrame = null;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     const busy = update(dt, now);
     if (busy || needsRender) { renderer.render(scene, camera); needsRender = false; }
+    if (busy && !document.hidden) animationFrame = requestAnimationFrame(loop);
   }
 
-  // All artwork is supplied as finished generated pages; wait for UI fonts and textures.
-  let texturesDone = false, fontsDone = false;
+  // Reveal after the current neighbourhood, UI font and paper textures are ready.
   function reveal() {
-    if (!texturesDone || !fontsDone) return;
-    needsRender = true;
-    if (failed.length) {
-      $("#loadtext").textContent = `${failed.length} page image${failed.length > 1 ? "s" : ""} could not load. Reload to try again.`;
-      return;
-    }
-    setTimeout(() => { $("#loader").classList.add("done"); $("#loader").setAttribute("aria-hidden", "true"); }, 120);
+    if (!texturesDone || !fontsDone || !paperDone || pagesLoading) return;
+    $("#loader").classList.add("done");
+    $("#loader").setAttribute("aria-hidden", "true");
+    requestRender();
   }
-  manager.onLoad = () => { texturesDone = true; reveal(); };
+  manager.onLoad = () => { paperDone = true; reveal(); };
+  $("#retry-pages").addEventListener("click", () => prepareSpread(spreadIndex()));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && animationFrame !== null) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+    else if (!document.hidden) requestRender();
+  });
   const fontWait = document.fonts
     ? Promise.all([document.fonts.load("500 14px Oswald"), document.fonts.load("400 11px Oswald")])
     : Promise.resolve();
@@ -831,4 +926,5 @@
   const requestedId = decodeURIComponent(location.hash.slice(1));
   const requestedIndex = requestedId === "back" ? NL : BOOK.spreads.findIndex(s => s.id === requestedId) + 1;
   boot({ k: requestedIndex });
+  prepareSpread(clamp(requestedIndex, 0, NL));
 })();

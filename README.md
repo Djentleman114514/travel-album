@@ -23,6 +23,10 @@ npm run dev
 
 `npm run build` 会先安装并构建 `japan-book-art-edition/` 相册，再将书架首页、日本相册和 `albums/` 下的本地阅读器组装到 `site/`。Vercel 使用仓库根目录的 `vercel.json`，将 `site/` 发布为网站根目录。不要将相册子目录单独设为 Vercel 的项目根目录。
 
+两本相册共用 `shared/page-window.js`：优先准备当前跨页和相邻跨页，最多同时请求两张页图，再预取下一圈；离开这个范围的纹理会释放。目录中的远距离跳转直接显示目标跨页，不会翻过尚未加载的整段页面。加载失败时可以点击 Retry 重试。手机使用较低的像素比、阴影分辨率和页面细分，新加坡阅读器静止时也会停止动画循环。
+
+现有 WebP 文件在构建时原样复制。构建程序根据发布内容计算版本号，给脚本、样式、字体和图片 URL 添加 `?v=`；Vercel 只对带有效版本号的静态资源设置长期缓存。更新相册后版本号会变，HTML 页面保持正常更新策略。`npm test` 检查发布资源和加载调度；日本阅读器的手势与渲染检查可用 `npm test --prefix japan-book-art-edition` 运行。
+
 ## 目录说明
 
 - 根目录的 `index.html`、`books.js`、`collection.*`、`book.*` 和 `shelf-order.js`：书架网站。

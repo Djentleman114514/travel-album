@@ -1,3 +1,4 @@
+import { versionedAsset } from "./shared/asset-url.js";
 import { books, bookUrl } from "./books.js";
 import { enableShelfOrdering } from "./shelf-order.js";
 
@@ -84,7 +85,7 @@ function showPreview(link) {
   const image = preview.querySelector(".cover-preview__image");
   image.hidden = !book.cover;
   preview.querySelector(".cover-preview__title").hidden = Boolean(book.cover);
-  if (book.cover) image.src = book.cover;
+  if (book.cover) image.src = versionedAsset(book.cover);
   else image.removeAttribute("src");
   preview.querySelector("figcaption").textContent = book.description;
   const style = link.closest(".volume").style;

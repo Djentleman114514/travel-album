@@ -71,7 +71,7 @@ test("3D Book 2 exposes only the Japan personal edition", () => {
   const bookIds = books.map((book) => book.id);
   assert.deepEqual(bookIds, ["japan-after-the-lights-your-name"]);
   assert.match(config, /publicDir: "public"/);
-  assert.match(main, /const assetUrl = `\$\{import\.meta\.env\.BASE_URL\}/);
+  assert.match(main, /versionedAsset\(source, import\.meta\.env\.BASE_URL\)/);
   assert.match(main, /textureLoader\.loadAsync\(assetUrl\)/);
 });
 
@@ -107,21 +107,19 @@ test("3D Book 2 renders soft dynamic shadows and refreshes every deformed sheet'
 });
 
 test("3D Book 2 bounds geometry, pixel, shadow, and texture work", () => {
-  assert.match(main, /const PAGE_SUBDIVISIONS = 16/);
-  assert.match(main, /const MAX_PIXEL_RATIO = 2;/);
-  assert.match(main, /const SHADOW_MAP_SIZE = 1024/);
+  assert.match(main, /const PAGE_SUBDIVISIONS = mobileReader \? 8 : 16/);
+  assert.match(main, /const MAX_PIXEL_RATIO = mobileReader \? 1\.5 : 2;/);
+  assert.match(main, /const SHADOW_MAP_SIZE = mobileReader \? 512 : 1024/);
   assert.match(main, /const MAX_TEXTURE_EDGE = 1024/);
-  assert.match(main, /const MAX_TEXTURE_ANISOTROPY = 4/);
+  assert.match(main, /const MAX_TEXTURE_ANISOTROPY = mobileReader \? 2 : 4/);
   assert.match(main, /Math\.min\(window\.devicePixelRatio, MAX_PIXEL_RATIO\)/);
   assert.match(main, /resizeTextureImage\(texture\)/);
 });
 
-test("3D Book 2 memoizes settled sheets and bounds the material cache", () => {
+test("3D Book 2 memoizes settled sheets and releases evicted textures", () => {
   assert.match(main, /function memoizeSheetDeformation\(\)/);
   assert.match(main, /pageProgress === previousPageProgress/);
-  assert.match(main, /const CACHED_BOOK_LIMIT = 2/);
-  assert.match(main, /material\.map\?\.dispose\(\)/);
-  assert.match(main, /material\.dispose\(\)/);
+  assert.match(main, /texture\.dispose\(\)/);
 });
 
 test("3D Book 2 renders on demand and parks a settled edge preview", () => {
