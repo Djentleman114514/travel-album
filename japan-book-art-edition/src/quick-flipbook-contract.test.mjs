@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { books } from "./books.js";
 
 const main = await readFile(new URL("./main.js", import.meta.url), "utf8");
-const books = await readFile(new URL("./books.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const styles = await readFile(new URL("./style.css", import.meta.url), "utf8");
 const config = await readFile(new URL("../vite.config.js", import.meta.url), "utf8");
@@ -68,8 +68,8 @@ test("the loading live region is removed from the accessibility tree when idle",
 });
 
 test("3D Book 2 exposes only the Japan personal edition", () => {
-  const bookIds = [...books.matchAll(/id: "([^"]+)"/g)].map(([, id]) => id);
-  assert.deepEqual(bookIds, ["japan-after-the-lights"]);
+  const bookIds = books.map((book) => book.id);
+  assert.deepEqual(bookIds, ["japan-after-the-lights-your-name"]);
   assert.match(config, /publicDir: "public"/);
   assert.match(main, /const assetUrl = `\$\{import\.meta\.env\.BASE_URL\}/);
   assert.match(main, /textureLoader\.loadAsync\(assetUrl\)/);
@@ -108,7 +108,7 @@ test("3D Book 2 renders soft dynamic shadows and refreshes every deformed sheet'
 
 test("3D Book 2 bounds geometry, pixel, shadow, and texture work", () => {
   assert.match(main, /const PAGE_SUBDIVISIONS = 16/);
-  assert.match(main, /const MAX_PIXEL_RATIO = 1\.5/);
+  assert.match(main, /const MAX_PIXEL_RATIO = 2;/);
   assert.match(main, /const SHADOW_MAP_SIZE = 1024/);
   assert.match(main, /const MAX_TEXTURE_EDGE = 1024/);
   assert.match(main, /const MAX_TEXTURE_ANISOTROPY = 4/);

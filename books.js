@@ -6,7 +6,7 @@ export const books = [
     paper: "#d9dcc7",
     ink: "#294438",
     height: 0.78,
-    cover: "japan-book-art-edition/dist/assets/pages/cover-right.png",
+    cover: "japan-book-art-edition/dist/assets/pages/cover-right.webp",
     reader: "japan-book-art-edition/dist/index.html",
     pageCount: 72,
     description: "Japan, August 2026",
