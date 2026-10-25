@@ -1,4 +1,5 @@
-import { createPageWindow, spreadFaces } from "../../shared/page-window.js";
+import { createPageWindow, spreadFaces, nearbyFaces } from "../../shared/page-window.js";
+import { loadPageImage } from "../../shared/page-image.js";
 import { versionedAsset } from "../../shared/asset-url.js";
 import * as THREE from "three";
 import { FlipBook } from "quick_flipbook";
@@ -135,7 +136,6 @@ const edgePreview = {
   amount: 0,
   target: 0,
 };
-const textureLoader = new THREE.TextureLoader();
 let pageWindow = null;
 let navigationToken = 0;
 const memoizedSheets = new WeakSet();
@@ -143,6 +143,7 @@ const dirtySheets = new Set();
 let animationFrame = null;
 let previousFrameTime = performance.now();
 let residentSpread = -1;
+let readingSpread = 0, readingDirection = 1;
 
 function makePaperMaterial(map = null) {
   const material = new THREE.MeshStandardMaterial({
@@ -178,9 +179,10 @@ function resizeTextureImage(texture) {
 const whiteTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
 whiteTexture.needsUpdate = true;
 
-async function loadPageTexture(source) {
+async function loadPageTexture(source, options) {
   const assetUrl = versionedAsset(source, import.meta.env.BASE_URL);
-  const texture = await textureLoader.loadAsync(assetUrl);
+  const image = await loadPageImage(assetUrl, options);
+  const texture = new THREE.Texture(image);
   resizeTextureImage(texture);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = Math.min(MAX_TEXTURE_ANISOTROPY, renderer.capabilities.getMaxAnisotropy());
@@ -200,9 +202,11 @@ async function prepareSpread(spread, action = () => {}) {
   if (!pageWindow) return false;
   const token = ++navigationToken;
   const cache = pageWindow;
-  const required = spreadFaces(spread, selectedBook.pages.length, 1);
+  const required = spreadFaces(spread, selectedBook.pages.length);
+  if (spread !== readingSpread) readingDirection = Math.sign(spread - readingSpread);
+  readingSpread = spread;
   // Keep the old view intact while a distant Contents jump loads its destination.
-  const nearby = [...spreadFaces(spread, selectedBook.pages.length, 2),
+  const nearby = [...nearbyFaces(spread, selectedBook.pages.length, readingDirection),
     ...spreadFaces(Math.round(flipBook.progress), selectedBook.pages.length)];
   document.querySelector("#reader-error").hidden = true;
   const ready = cache.isReady(required);
@@ -281,8 +285,11 @@ async function selectBook(book, immediate = false) {
   pageWindow?.focus([]);
   const pageMaterials = book.pages.map(() => makePaperMaterial(whiteTexture));
   pageWindow = createPageWindow({
-    load: index => loadPageTexture(book.pages[index]),
-    apply: (index, texture) => { pageMaterials[index].map = texture; },
+    load: (index, options) => loadPageTexture(book.pages[index], options),
+    apply: (index, texture) => {
+      renderer.initTexture(texture);
+      pageMaterials[index].map = texture;
+    },
     release: (index, texture) => {
       if (pageMaterials[index].map === texture) pageMaterials[index].map = whiteTexture;
       texture.dispose();
@@ -290,6 +297,11 @@ async function selectBook(book, immediate = false) {
     onChange: requestRender,
     onError: showPageError,
   });
+
+  readingSpread = 0; readingDirection = 1; residentSpread = -1;
+  // Start the cover request before building the 3D sheets. Neighbours wait
+  // until the cover has downloaded so they cannot compete with first view.
+  const firstPages = pageWindow.focus(spreadFaces(0, book.pages.length), nearbyFaces(0, book.pages.length));
 
   flipBook.scale.x = book.ratio;
   // Quick FlipBook stacks sheets downwards from the spine. Lift the whole
@@ -309,6 +321,8 @@ async function selectBook(book, immediate = false) {
       object.receiveShadow = true;
     }
   });
+  await firstPages;
+  if (token !== loadToken) return;
   await prepareSpread(0);
 }
 
@@ -456,7 +470,7 @@ function takeEdgePreviewForDrag() {
 
 function nextPage() {
   if (!loading && flipBook.currentPage < flipBook.totalPages) {
-    prepareSpread(Math.min(Math.ceil(flipBook.progress) + 1, flipBook.totalPages / 2), () => {
+    prepareSpread(Math.min(Math.ceil(flipBook.currentPage / 2) + 1, flipBook.totalPages / 2), () => {
       clearEdgePreview(true); flipBook.nextPage();
     });
   }
@@ -464,7 +478,7 @@ function nextPage() {
 
 function previousPage() {
   if (!loading && flipBook.currentPage > 0) {
-    prepareSpread(Math.max(Math.floor(flipBook.progress) - 1, 0), () => {
+    prepareSpread(Math.max(Math.ceil(flipBook.currentPage / 2) - 1, 0), () => {
       clearEdgePreview(true); flipBook.previousPage();
     });
   }
@@ -506,10 +520,6 @@ canvas.addEventListener("pointerdown", (event) => {
   const bounds = canvas.getBoundingClientRect();
   const direction = chooseDragDirection(position, flipBook.totalPages / 2, event.clientX, bounds.left + bounds.width / 2);
   const destination = Math.max(0, Math.min(position + direction, flipBook.totalPages / 2));
-  if (!pageWindow?.isReady(spreadFaces(destination, selectedBook.pages.length))) {
-    prepareSpread(destination);
-    return;
-  }
   const preview = takeEdgePreviewForDrag();
   if (!preview) clearEdgePreview(true);
   const metrics = getBookScreenMetrics();
@@ -534,7 +544,8 @@ canvas.addEventListener("pointerdown", (event) => {
     pageWidth: metrics.pageWidth,
     direction: preview?.direction
       ?? chooseDragDirection(sheet, maxSheet, event.clientX, metrics.centerX),
-    dragReady: settled && overBook,
+    tapReady: settled && overBook,
+    dragReady: settled && overBook && pageWindow?.isReady(spreadFaces(destination, selectedBook.pages.length)),
     dragging: false,
     startFraction: preview?.fraction ?? 0,
     fraction: preview?.fraction ?? 0,
@@ -607,7 +618,7 @@ canvas.addEventListener("pointerup", (event) => {
 
   if (Math.abs(deltaX) > 36 && Math.abs(deltaX) > Math.abs(deltaY)) {
     deltaX < 0 ? nextPage() : previousPage();
-  } else if (start.dragReady && elapsed < 500 && Math.abs(deltaY) < 20) {
+  } else if (start.tapReady && elapsed < 500 && Math.abs(deltaY) < 20) {
     event.clientX < window.innerWidth / 2 ? previousPage() : nextPage();
   } else if (start.startFraction > 0) {
     flipBook.currentPage = start.sheet * 2;
@@ -702,7 +713,9 @@ function animate(timestamp) {
   const settled = Math.round(flipBook.progress);
   if (!loading && !pointerStart && Math.abs(settled - flipBook.progress) < 0.001 && settled !== residentSpread) {
     residentSpread = settled;
-    pageWindow?.focus(spreadFaces(settled, selectedBook.pages.length, 1), spreadFaces(settled, selectedBook.pages.length, 2));
+    if (settled !== readingSpread) readingDirection = Math.sign(settled - readingSpread);
+    readingSpread = settled;
+    pageWindow?.focus(spreadFaces(settled, selectedBook.pages.length), nearbyFaces(settled, selectedBook.pages.length, readingDirection));
   }
   const progressChanged = Math.abs(previousProgress - flipBook.progress) > 1e-7;
   if (previewNeedsFrame || (!dragOwnsFrame && progressChanged)) continueRendering();

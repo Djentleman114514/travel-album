@@ -1,4 +1,3 @@
-// Keep only the current neighbourhood resident; urgent pages precede prefetches.
 export function spreadFaces(spread, count, radius = 0) {
   const result = [];
   for (let distance = 0; distance <= radius; distance++) {
@@ -11,61 +10,95 @@ export function spreadFaces(spread, count, radius = 0) {
   return result;
 }
 
-export function createPageWindow({ load, apply, release, onChange = () => {}, onError = () => {}, concurrency = 2 }) {
+// Fetch in reading order: four spreads ahead, two behind. Readiness only
+// depends on the visible faces, never on this speculative work.
+export function nearbyFaces(spread, count, direction = 1) {
+  const positions = [1, 2, -1, 3, -2, 4];
+  return positions.flatMap(offset => spreadFaces(spread + offset * direction, count));
+}
+
+export function createPageWindow({ load, apply, release, onChange = () => {}, onError = () => {},
+  concurrency = 4, prefetchConcurrency = 2, maxResident = 24 }) {
   const entries = new Map();
-  let wanted = new Set();
-  let priority = [];
-  let active = 0;
+  let wanted = new Set(), required = new Set(), priority = [];
+  let active = 0, background = 0, clock = 0;
+
+  function discard(index, entry) {
+    entries.delete(index);
+    if (entry.state === "ready") release(index, entry.asset);
+    else { entry.controller?.abort(); entry.resolve(false); }
+  }
+
+  function trim() {
+    const ready = [...entries].filter(([, entry]) => entry.state === "ready");
+    const spare = ready.filter(([index]) => !wanted.has(index))
+      .sort((a, b) => a[1].used - b[1].used);
+    let excess = ready.length - maxResident;
+    for (const [index, entry] of spare) {
+      if (excess-- <= 0) break;
+      discard(index, entry);
+    }
+  }
 
   function pump() {
     while (active < concurrency) {
-      const index = priority.find(index => entries.get(index)?.state === "queued");
+      const missing = [...required].some(index => entries.get(index)?.state !== "ready");
+      const index = priority.find(index => entries.get(index)?.state === "queued"
+        && (required.has(index) || (!missing && background < prefetchConcurrency)));
       if (index === undefined) return;
       const entry = entries.get(index);
+      const speculative = !required.has(index);
       entry.state = "loading";
+      entry.controller = new AbortController();
       active++;
-      Promise.resolve().then(() => load(index)).then(asset => {
-        if (!wanted.has(index)) {
+      if (speculative) background++;
+      // Start requests immediately, before the readers construct page geometry.
+      let job;
+      try { job = load(index, { signal: entry.controller.signal, priority: speculative ? "low" : "high" }); }
+      catch (error) { job = Promise.reject(error); }
+      Promise.resolve(job).then(asset => {
+        if (entries.get(index) !== entry) {
           release(index, asset);
-          entries.delete(index);
-          entry.resolve(false);
           return;
         }
         entry.asset = asset;
         apply(index, asset);
         entry.state = "ready";
+        entry.used = ++clock;
         entry.resolve(true);
-        onChange();
+        trim();
+        // Background image downloads do not change the visible spread.
+        if (required.has(index)) onChange();
       }).catch(error => {
+        if (entries.get(index) !== entry) return;
         if (entry.asset) release(index, entry.asset);
         entry.state = "error";
         entry.resolve(false);
-        if (wanted.has(index)) onError(index, error);
+        if (required.has(index)) onError(index, error);
       }).finally(() => {
         active--;
+        if (speculative) background--;
         pump();
       });
     }
   }
 
-  function focus(required, nearby = []) {
-    priority = [...new Set([...required, ...nearby])];
+  function focus(visible, nearby = []) {
+    required = new Set(visible);
+    priority = [...new Set([...visible, ...nearby])];
     wanted = new Set(priority);
     for (const [index, entry] of entries) {
-      if (entry.state === "loading") continue;
-      if (!wanted.has(index) || entry.state === "error") {
-        if (entry.state === "ready") release(index, entry.asset);
-        else entry.resolve(false);
-        entries.delete(index);
-      }
+      if (!priority.length || entry.state === "error"
+        || (!wanted.has(index) && entry.state !== "ready")) discard(index, entry);
     }
     for (const index of priority) {
-      if (entries.has(index)) continue;
+      if (entries.has(index)) { entries.get(index).used = ++clock; continue; }
       let resolve;
       const promise = new Promise(done => { resolve = done; });
-      entries.set(index, { state: "queued", promise, resolve });
+      entries.set(index, { state: "queued", promise, resolve, used: ++clock });
     }
-    const result = Promise.all(required.map(index => entries.get(index).promise)).then(results => results.every(Boolean));
+    trim();
+    const result = Promise.all(visible.map(index => entries.get(index).promise)).then(results => results.every(Boolean));
     pump();
     return result;
   }

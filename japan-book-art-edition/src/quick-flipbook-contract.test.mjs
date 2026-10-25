@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
 import { books } from "./books.js";
 
 const main = await readFile(new URL("./main.js", import.meta.url), "utf8");
@@ -72,7 +73,7 @@ test("3D Book 2 exposes only the Japan personal edition", () => {
   assert.deepEqual(bookIds, ["japan-after-the-lights-your-name"]);
   assert.match(config, /publicDir: "public"/);
   assert.match(main, /versionedAsset\(source, import\.meta\.env\.BASE_URL\)/);
-  assert.match(main, /textureLoader\.loadAsync\(assetUrl\)/);
+  assert.match(main, /loadPageImage\(assetUrl, options\)/);
 });
 
 test("3D Book 2 keeps the interface silent and the stage white", () => {
@@ -133,4 +134,19 @@ test("3D Book 2 renders on demand and parks a settled edge preview", () => {
 test("3D Book 2 settles page materials and avoids per-frame DOM writes", () => {
   assert.match(main, /for \(let index = 0; index < pageMaterials\.length; index \+= 1\) await Promise\.resolve\(\)/);
   assert.match(main, /if \(statusKey === lastStatusKey\) return/);
+});
+
+
+test("rapid turns prepare the animation target even while the visible sheet trails behind", () => {
+  const navigation = main.slice(main.indexOf("function nextPage()"), main.indexOf("function updateStatus()"));
+  const targets = [];
+  const flipBook = {
+    progress: 1.25, currentPage: 12, totalPages: 72,
+    nextPage() { this.currentPage += 2; },
+    previousPage() { this.currentPage -= 2; },
+  };
+  const context = { loading: false, flipBook, clearEdgePreview() {},
+    prepareSpread(spread, action) { targets.push(spread); action(); } };
+  runInNewContext(navigation + "nextPage(); nextPage(); previousPage(); previousPage();", context);
+  assert.deepEqual(targets, [7, 8, 7, 6]);
 });

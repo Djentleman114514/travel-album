@@ -1,4 +1,5 @@
-import { createPageWindow, spreadFaces } from "../../shared/page-window.js";
+import { createPageWindow, spreadFaces, nearbyFaces } from "../../shared/page-window.js";
+import { loadPageImage } from "../../shared/page-image.js";
 import { versionedAsset } from "../../shared/asset-url.js";
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -87,16 +88,28 @@ import { versionedAsset } from "../../shared/asset-url.js";
   scene.add(fill);
 
   // ---------- textures ----------
-  const manager = new THREE.LoadingManager();
-  const texLoader = new THREE.TextureLoader(manager);
-  let texturesDone = false, fontsDone = false, paperDone = false, pagesLoading = false;
+  const texLoader = new THREE.TextureLoader();
+  let texturesDone = false, pagesLoading = false;
+  let readingSpread = 0, readingDirection = 1;
   let pageNavigation = 0;
-  manager.onError = url => console.warn("Optional paper texture could not load:", url);
+  const paperJobs = [];
+  const neutralPaper = document.createElement("canvas");
+  neutralPaper.width = neutralPaper.height = 1;
+  neutralPaper.getContext("2d").fillStyle = "#808080";
+  neutralPaper.getContext("2d").fillRect(0, 0, 1, 1);
   function tex(url, srgb, repeat) {
-    const t = texLoader.load(versionedAsset(url));
+    const t = new THREE.Texture(neutralPaper);
+    t.needsUpdate = true;
     t.anisotropy = maxAniso;
     if (srgb) t.encoding = THREE.sRGBEncoding;
     if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+    // The desk and spine must not compete with the cover on a cold connection.
+    paperJobs.push(() => texLoader.load(versionedAsset(url), asset => {
+      t.image = asset.image;
+      t.needsUpdate = true;
+      asset.dispose();
+      requestRender();
+    }, undefined, () => console.warn("Optional paper texture could not load:", url)));
     return t;
   }
 
@@ -348,6 +361,65 @@ import { versionedAsset } from "../../shared/asset-url.js";
     return faceTextures.get(face);
   }
 
+  const faceNames = [BOOK.frontCover.file, ...BOOK.spreads.flatMap(spread => [spread.left.file, spread.right.file]), BOOK.backCover.file];
+  const pageWindow = createPageWindow({
+    load: async (index, options) => new THREE.Texture(await loadPageImage(versionedAsset("assets/pages/" + faceNames[index]), options)),
+    apply: (index, asset) => {
+      const texture = faceMap(faceNames[index]);
+      texture.image = asset.image;
+      texture.needsUpdate = true;
+      renderer.initTexture(texture);
+    },
+    release: (index, asset) => {
+      const texture = faceMap(faceNames[index]);
+      if (texture.image === asset.image) {
+        texture.dispose();
+        texture.image = blankCanvas;
+        texture.needsUpdate = true;
+      }
+      asset.dispose();
+    },
+    onChange: requestRender,
+    onError: () => {
+      $("#loadtext").textContent = "Some pages could not load. Check your connection and retry.";
+      $("#retry-pages").hidden = false;
+    },
+  });
+
+  async function prepareSpread(k, action = () => {}) {
+    const token = ++pageNavigation;
+    const required = spreadFaces(k, faceNames.length);
+    if (k !== readingSpread) readingDirection = Math.sign(k - readingSpread);
+    readingSpread = k;
+    const nearby = [...nearbyFaces(k, faceNames.length, readingDirection), ...spreadFaces(spreadIndex(), faceNames.length)];
+    if (!pageWindow.isReady(required)) {
+      pagesLoading = true;
+      $("#prev").disabled = $("#next").disabled = true;
+      $("#loader").classList.toggle("turn-loading", texturesDone);
+      $("#loader").classList.remove("done");
+      $("#loader").setAttribute("aria-hidden", "false");
+      $("#loadtext").textContent = "Preparing current pages…";
+      $("#bar").style.width = "30%";
+      $("#retry-pages").hidden = true;
+    }
+    const success = await pageWindow.focus(required, nearby);
+    if (token !== pageNavigation) return false;
+    pagesLoading = false;
+    $("#prev").disabled = spreadIndex() === 0;
+    $("#next").disabled = spreadIndex() === NL;
+    if (!success) return false;
+    texturesDone = true;
+    action();
+    $("#bar").style.width = "100%";
+    reveal();
+    requestRender();
+    return true;
+  }
+
+  const requestedId = decodeURIComponent(location.hash.slice(1));
+  const requestedIndex = requestedId === "back" ? NL : BOOK.spreads.findIndex(s => s.id === requestedId) + 1;
+  pageWindow.focus(spreadFaces(clamp(requestedIndex, 0, NL), faceNames.length), nearbyFaces(clamp(requestedIndex, 0, NL), faceNames.length));
+
   const leaves = SPEC.map((sp, i) => {
     const L = { i, kind: sp.kind, t: 0, te: 0, target: 0, anim: null, dir: 1, dragging: false,
       peek: 0, peekTarget: 0, curl: 0, curlTarget: 0, grabY: -0.55, sig: "" };
@@ -393,55 +465,6 @@ import { versionedAsset } from "../../shared/asset-url.js";
     }
     return L;
   });
-
-  const faceNames = [BOOK.frontCover.file, ...BOOK.spreads.flatMap(spread => [spread.left.file, spread.right.file]), BOOK.backCover.file];
-  const pageLoader = new THREE.TextureLoader();
-  const pageWindow = createPageWindow({
-    load: index => pageLoader.loadAsync(versionedAsset("assets/pages/" + faceNames[index])),
-    apply: (index, asset) => {
-      const texture = faceMap(faceNames[index]);
-      texture.image = asset.image;
-      texture.needsUpdate = true;
-    },
-    release: (index, asset) => {
-      const texture = faceMap(faceNames[index]);
-      if (texture.image === asset.image) {
-        texture.dispose();
-        texture.image = blankCanvas;
-        texture.needsUpdate = true;
-      }
-      asset.dispose();
-    },
-    onChange: requestRender,
-    onError: () => {
-      $("#loadtext").textContent = "Some pages could not load. Check your connection and retry.";
-      $("#retry-pages").hidden = false;
-    },
-  });
-
-  async function prepareSpread(k, action = () => {}) {
-    const token = ++pageNavigation;
-    const required = spreadFaces(k, faceNames.length, 1);
-    const nearby = [...spreadFaces(k, faceNames.length, 2), ...spreadFaces(spreadIndex(), faceNames.length)];
-    if (!pageWindow.isReady(required)) {
-      pagesLoading = true;
-      $("#loader").classList.remove("done");
-      $("#loader").setAttribute("aria-hidden", "false");
-      $("#loadtext").textContent = "Preparing current pages…";
-      $("#bar").style.width = "30%";
-      $("#retry-pages").hidden = true;
-    }
-    const success = await pageWindow.focus(required, nearby);
-    if (token !== pageNavigation) return false;
-    pagesLoading = false;
-    if (!success) return false;
-    texturesDone = true;
-    action();
-    $("#bar").style.width = "100%";
-    reveal();
-    requestRender();
-    return true;
-  }
 
   // spine: black book cloth bridging the two boards, re-shaped every frame
   const SPS = 14;
@@ -770,15 +793,12 @@ import { versionedAsset } from "../../shared/asset-url.js";
     const L = side > 0 ? topRight() : topLeft();
     if (!L) return;
     const destination = clamp(spreadIndex() + side, 0, NL);
-    if (!pageWindow.isReady(spreadFaces(destination, faceNames.length))) {
-      prepareSpread(destination);
-      return;
-    }
+    const ready = pageWindow.isReady(spreadFaces(destination, faceNames.length));
     setPeek(null);
     L.t = L.te; L.peek = 0; L.peekTarget = 0;
     L.grabY = clamp(p.y, -H / 2, H / 2);
     L.dir = side;
-    drag = { L, side, x0: p.x, sx: e.clientX, sy: e.clientY, moved: false, lastT: L.t, lastTime: performance.now(), vel: 0 };
+    drag = { L, side, ready, destination, x0: p.x, sx: e.clientX, sy: e.clientY, moved: false, lastT: L.t, lastTime: performance.now(), vel: 0 };
     canvas.setPointerCapture(e.pointerId);
     canvas.style.cursor = "grabbing";
   });
@@ -790,6 +810,7 @@ import { versionedAsset } from "../../shared/asset-url.js";
       cam.elJT = ((e.clientY / vh) - 0.5) * -0.03;
     }
     if (drag) {
+      if (!drag.ready) return;
       const { L, side } = drag;
       if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) {
         drag.moved = true; L.dragging = true; noteInteraction();
@@ -825,8 +846,10 @@ import { versionedAsset } from "../../shared/asset-url.js";
     canvas.style.cursor = "grab";
     if (!moved) {
       const p = pick(e);
-      turn(L, side > 0 ? 1 : 0, { grabY: p ? clamp(p.y, -H / 2, H / 2) : -0.6 });
-      noteInteraction();
+      prepareSpread(drag.destination, () => {
+        turn(L, side > 0 ? 1 : 0, { grabY: p ? clamp(p.y, -H / 2, H / 2) : -0.6 });
+        noteInteraction();
+      });
     } else {
       const proj = L.t + drag.vel * 0.14;
       const to = side > 0 ? (proj > 0.45 ? 1 : 0) : (proj < 0.55 ? 0 : 1);
@@ -864,6 +887,8 @@ import { versionedAsset } from "../../shared/asset-url.js";
     const k = spreadIndex();
     if (k === lastK) return;
     lastK = k;
+    if (k !== readingSpread) readingDirection = Math.sign(k - readingSpread);
+    readingSpread = k;
     $("#label").textContent = SPREADS[k];
     $("#live").textContent = SPREADS[k] + ". " + DESCRIPTIONS[k];
     stage.setAttribute("aria-label", BOOK.title + ". " + SPREADS[k] + ". " + DESCRIPTIONS[k]);
@@ -873,7 +898,7 @@ import { versionedAsset } from "../../shared/asset-url.js";
     const currentId = k === 0 ? "cover" : k === NL ? "back" : BOOK.spreads[k - 1].id;
     stage.dataset.artwork = currentId;
     history.replaceState(null, "", "#" + currentId);
-    if (texturesDone && !pagesLoading) pageWindow.focus(spreadFaces(k, faceNames.length, 1), spreadFaces(k, faceNames.length, 2));
+    if (texturesDone && !pagesLoading) pageWindow.focus(spreadFaces(k, faceNames.length), nearbyFaces(k, faceNames.length, readingDirection));
     $("#prev").disabled = k === 0;
     $("#next").disabled = k === NL;
     [...dots.children].forEach((d, i) => d.setAttribute("aria-current", String(i === k)));
@@ -905,26 +930,19 @@ import { versionedAsset } from "../../shared/asset-url.js";
     if (busy && !document.hidden) animationFrame = requestAnimationFrame(loop);
   }
 
-  // Reveal after the current neighbourhood, UI font and paper textures are ready.
+  // Reveal as soon as the visible artwork is ready; fonts and paper are optional.
   function reveal() {
-    if (!texturesDone || !fontsDone || !paperDone || pagesLoading) return;
+    if (!texturesDone || pagesLoading) return;
     $("#loader").classList.add("done");
     $("#loader").setAttribute("aria-hidden", "true");
     requestRender();
+    if (paperJobs.length) requestAnimationFrame(() => setTimeout(() => paperJobs.splice(0).forEach(job => job()), 0));
   }
-  manager.onLoad = () => { paperDone = true; reveal(); };
   $("#retry-pages").addEventListener("click", () => prepareSpread(spreadIndex()));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && animationFrame !== null) { cancelAnimationFrame(animationFrame); animationFrame = null; }
     else if (!document.hidden) requestRender();
   });
-  const fontWait = document.fonts
-    ? Promise.all([document.fonts.load("500 14px Oswald"), document.fonts.load("400 11px Oswald")])
-    : Promise.resolve();
-  Promise.race([fontWait, new Promise((r) => setTimeout(r, 3500))]).catch(() => {}).then(() => { fontsDone = true; reveal(); });
-
-  const requestedId = decodeURIComponent(location.hash.slice(1));
-  const requestedIndex = requestedId === "back" ? NL : BOOK.spreads.findIndex(s => s.id === requestedId) + 1;
   boot({ k: requestedIndex });
   prepareSpread(clamp(requestedIndex, 0, NL));
 })();
