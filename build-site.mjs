@@ -30,4 +30,6 @@ for (const file of [
 const albumOutput = join(site, "japan-book-art-edition", "dist");
 mkdirSync(dirname(albumOutput), { recursive: true });
 cpSync(join(album, "dist"), albumOutput, { recursive: true });
+const albums = join(root, "albums");
+if (existsSync(albums)) cpSync(albums, join(site, "albums"), { recursive: true });
 console.log(`Website built to ${site}`);
