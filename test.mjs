@@ -145,6 +145,26 @@ test("the real photobook's reader, cover, page count, and built assets are avail
   }
 });
 
+test("Japan deploys chapter artwork overrides and the matching reader leaves", async () => {
+  const { books: editions } = await import("./japan/src/books.js");
+  const book = editions[0];
+  const base = new URL("japan/public/", import.meta.url);
+  const deployed = new URL("site/japan-book-art-edition/dist/", import.meta.url);
+  const chapter = book.chapters.find((item) => item.id === "e06");
+  assert.equal(chapter.artwork, "assets/spreads/e06.webp");
+  for (const path of [
+    ...book.chapters.map((item) => item.artwork || `assets/spreads/${item.id}.png`),
+    ...book.pages,
+  ]) {
+    const bytes = await readFile(new URL(path, base));
+    assert.ok(bytes.equals(await readFile(new URL(path, deployed))), `stale Japan artwork: ${path}`);
+    if (path.endsWith(".webp")) {
+      assert.equal(bytes.toString("ascii", 0, 4), "RIFF");
+      assert.equal(bytes.toString("ascii", 8, 12), "WEBP");
+    }
+  }
+});
+
 test("missing and unknown reader IDs do not silently select a different book", () => {
   for (const search of ["", "?book=", "?book=missing", "?book=../outside", "?book=%3Cscript%3E"]) {
     assert.equal(selectedBook(search), null);

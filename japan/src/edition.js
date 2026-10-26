@@ -17,7 +17,7 @@ function openImage({ source, label, note }) {
 }
 function openArtwork(n = currentSpread) {
  const c=chapter(n);
- openImage({source:`assets/spreads/${c.id}.png`,label:n===0||n===backIndex?'Outside cover · back on left, front on right':`${String(n).padStart(2,'0')} · ${c.title}`,note:'Designed artwork · close to continue reading'});
+ openImage({source:c.artwork || `assets/spreads/${c.id}.png`,label:n===0||n===backIndex?'Outside cover · back on left, front on right':`${String(n).padStart(2,'0')} · ${c.title}`,note:'Designed artwork · close to continue reading'});
 }
 export function updateEditionStatus(n) {
  currentSpread=n;const c=chapter(n);
@@ -37,7 +37,7 @@ export function setupEdition(options) {
  list.forEach((c,i)=>{
   const b=document.createElement('button');b.className='chapter-card';b.dataset.chapter=i;
   b.setAttribute('aria-label',`Open ${c.title}`);
-  const img=document.createElement('img');img.src=asset(`assets/spreads/${c.id}.png`);img.alt=c.description||c.title;img.loading='lazy';
+  const img=document.createElement('img');img.src=asset(c.artwork || `assets/spreads/${c.id}.png`);img.alt=c.description||c.title;img.loading='lazy';
   const label=document.createElement('span');const number=document.createElement('small');number.textContent=i===0?'START':i===backIndex?'END':String(i).padStart(2,'0');label.append(number,document.createTextNode(c.title));
   b.append(img,label);b.addEventListener('click',()=>{const ok=jumpTo(i);$('#contents-dialog').close();if(!ok)openArtwork(i);});$('#contents-grid').append(b);
  });

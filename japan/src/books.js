@@ -149,6 +149,7 @@ export const books = [
       {
         "id": "e06",
         "title": "Windows Awake",
+        "artwork": "assets/spreads/e06.webp",
         "description": "Windows Awake",
         "section": "After the Lights"
       },
@@ -167,6 +168,7 @@ export const books = [
       {
         "id": "07",
         "title": "Under the Eaves",
+        "artwork": "assets/spreads/07.webp",
         "description": "Under the Eaves",
         "section": "After the Lights"
       },
