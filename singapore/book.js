@@ -399,7 +399,9 @@
     prof[ix] = u < 1 ? (PEXP * Math.pow(1 - u, PEXP - 1)) / RUN : 0;   // slope of 1-(1-u)^p
     humpD[ix] = ((1 - q) * Math.exp(1 - q)) / HUMP_S;                   // slope of q*e^(1-q)
     eShape[ix] = smooth((s - 0.8 * W) / (0.2 * W));
-    gS[ix] = (s / W) * (s / W) - 0.33;
+    // The binding holds the inner sheet in place; grow the corner curl outside
+    // it so the negative curl slope cannot cut into the page underneath.
+    gS[ix] = ((s / W) * (s / W) - 0.33) * smooth(s / RUN);
   }
   const riseF = (x) => { const u = clamp(Math.abs(x) / RUN, 0, 1); return 1 - Math.pow(1 - u, PEXP); };
   const humpF = (x) => { const q = Math.abs(x) / HUMP_S; return q * Math.exp(1 - q); };
