@@ -2,7 +2,7 @@
 export const books = [
   {
     id: "after-the-lights",
-    title: "After the Lights",
+    title: "Japan",
     paper: "#4b4453",
     ink: "#b0a8b9",
     height: 0.78,
@@ -13,7 +13,7 @@ export const books = [
   },
   {
     id: "between-facades",
-    title: "Between facades",
+    title: "Singapore",
     paper: "#e6dcc7",
     ink: "#21534d",
     height: 0.91,
