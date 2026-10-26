@@ -3,8 +3,8 @@ export const books = [
   {
     id: "after-the-lights",
     title: "After the Lights",
-    paper: "#d9dcc7",
-    ink: "#294438",
+    paper: "#4b4453",
+    ink: "#b0a8b9",
     height: 0.78,
     cover: "japan-book-art-edition/dist/assets/pages/cover-right.webp",
     reader: "japan-book-art-edition/dist/index.html",

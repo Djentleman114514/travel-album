@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
-import { books, bookUrl, selectedBook } from "./books.js";
-import { restoreOrder } from "./shelf-order.js";
+import { books, bookUrl, selectedBook } from "./homepage/books.js";
+import { restoreOrder } from "./homepage/shelf-order.js";
 import { runInNewContext } from "node:vm";
 
 test("Singapore packages exactly the accepted sequence and all 46 leaf faces", async () => {
-  const base = new URL("albums/singapore/", import.meta.url);
+  const base = new URL("singapore/", import.meta.url);
   const context = { window: {} };
   runInNewContext(await readFile(new URL("book-data.js", base), "utf8"), context);
   const book = context.window.PHOTOBOOK;
@@ -66,7 +66,7 @@ test("the three shelf books have unique IDs and working reader destinations", as
 });
 
 test("the real photobook's reader, cover, page count, and built assets are available locally", async () => {
-  const { books: editions } = await import("./japan-book-art-edition/src/books.js");
+  const { books: editions } = await import("./japan/src/books.js");
   const book = books.find((item) => item.reader);
   assert.ok(book);
   assert.equal(book.pageCount, editions[0].pages.length);
@@ -103,7 +103,7 @@ test("absent or malformed saved arrangements retain the catalog order", () => {
 
 test("HTML assets, return links, and module imports resolve locally", async () => {
   for (const filename of ["index.html", "book.html", "collection.js", "book.js", "books.js", "shelf-order.js"]) {
-    const base = new URL(filename, import.meta.url);
+    const base = new URL("homepage/" + filename, import.meta.url);
     const source = await readFile(base, "utf8");
     const references = filename.endsWith(".html")
       ? [...source.matchAll(/(?:href|src)="([^"#]+)"/g)].map((match) => match[1])
