@@ -53,7 +53,7 @@ function fitSpineType() {
     title.style.fontSize = "";
     const binding = title.parentElement;
     const fontSize = parseFloat(getComputedStyle(title).fontSize);
-    const availableHeight = Math.max(12, binding.clientHeight - title.offsetTop - 24);
+    const availableHeight = Math.max(12, binding.clientHeight - 24);
     const scale = Math.min(1, availableHeight / title.scrollHeight, (binding.clientWidth - 10) / title.offsetWidth);
     if (scale < 1) title.style.fontSize = `${Math.floor(fontSize * scale)}px`;
   }

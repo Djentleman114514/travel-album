@@ -1,5 +1,16 @@
 // Finished local photobooks and one remaining sample volume.
 export const books = [
+    {
+    id: "between-facades",
+    title: "Singapore",
+    paper: "#e6dcc7",
+    ink: "#21534d",
+    height: 0.78,
+    cover: "albums/singapore/assets/pages/cover-right.webp",
+    reader: "albums/singapore/index.html",
+    pageCount: 46,
+    description: "Singapore, March 2026",
+  },
   {
     id: "after-the-lights",
     title: "Japan",
@@ -10,17 +21,6 @@ export const books = [
     reader: "japan-book-art-edition/dist/index.html",
     pageCount: 72,
     description: "Japan, August 2026",
-  },
-  {
-    id: "between-facades",
-    title: "Singapore",
-    paper: "#e6dcc7",
-    ink: "#21534d",
-    height: 0.78,
-    cover: "albums/singapore/assets/pages/cover-right.webp",
-    reader: "albums/singapore/index.html",
-    pageCount: 46,
-    description: "Singapore, March 2026",
   },
   {
     id: "book-03",
