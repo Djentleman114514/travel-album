@@ -152,6 +152,12 @@ test("Japan deploys chapter artwork overrides and the matching reader leaves", a
   const deployed = new URL("site/japan-book-art-edition/dist/", import.meta.url);
   const chapter = book.chapters.find((item) => item.id === "e06");
   assert.equal(chapter.artwork, "assets/spreads/e06.webp");
+  for (const id of ["e05", "12"]) {
+    assert.equal(book.chapters.find((item) => item.id === id).artwork, `assets/spreads/${id}.webp`);
+    for (const side of ["left", "right"]) {
+      assert.ok(book.pages.includes(`assets/pages/${id}-${side}.webp`));
+    }
+  }
   for (const path of [
     ...book.chapters.map((item) => item.artwork || `assets/spreads/${item.id}.png`),
     ...book.pages,
