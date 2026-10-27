@@ -136,6 +136,7 @@ export const books = [
       },
       {
         "id": "e05",
+        "artwork": "assets/spreads/e05.webp",
         "title": "Above the Glow",
         "description": "Above the Glow",
         "section": "After the Lights"
@@ -288,6 +289,7 @@ export const books = [
       },
       {
         "id": "12",
+        "artwork": "assets/spreads/12.webp",
         "title": "The Sea Remains",
         "description": "The Sea Remains",
         "section": "After the Lights"
