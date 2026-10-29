@@ -16,6 +16,7 @@ import "./style.css";
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
   loading: "正在准备相册",
+  loadingPages: (completed, total) => `正在加载图片 ${completed} / ${total}`,
   preparing: (title) => `正在准备《${title}》`,
   open: (title) => `打开《${title}》`,
   cover: "封面",
@@ -23,6 +24,7 @@ const readerText = chinese ? {
   spread: (current, total) => `${String(current).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
 } : {
   loading: "Preparing edition",
+  loadingPages: (completed, total) => `Loading pages ${completed} / ${total}`,
   preparing: (title) => `Preparing ${title}`,
   open: (title) => `Open ${title}`,
   cover: "Cover",
@@ -38,6 +40,10 @@ const nextButton = document.querySelector("#next-page");
 const pageState = document.querySelector("#page-state");
 const loadingCard = document.querySelector("#loading-card");
 const loadingCopy = document.querySelector("#loading-copy");
+const loadingTitle = document.querySelector("#loading-title");
+const loadingProgress = document.querySelector("#loading-progress");
+const loadingFill = document.querySelector("#loading-fill");
+const loadingPercent = document.querySelector("#loading-percent");
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 // Keep the WebGL canvas sharp on high-density phone screens without
 // rendering at the full device pixel ratio, which can be expensive on mobile.
@@ -260,6 +266,14 @@ function setLoading(value, copy = readerText.loading) {
   nextButton.disabled = value;
 }
 
+function updateLoadingProgress(completed, total) {
+  const percent = total ? Math.floor(completed / total * 100) : 100;
+  loadingFill.style.width = `${percent}%`;
+  loadingPercent.textContent = `${percent}%`;
+  loadingProgress.setAttribute("aria-valuenow", String(percent));
+  loadingCopy.textContent = readerText.loadingPages(completed, total);
+}
+
 function renderLibrary() {
   library.innerHTML = books
     .map(
@@ -279,11 +293,18 @@ async function selectBook(book, immediate = false) {
   selectedBook = book;
   const token = ++loadToken;
   renderLibrary();
+  loadingTitle.textContent = bookTitle(book);
   setLoading(true, readerText.preparing(bookTitle(book)));
+  let completedPages = 0;
+  updateLoadingProgress(0, book.pages.length);
   resize();
 
   const pageMaterials = await Promise.all(
-    book.pages.map((source) => pageMaterial(book.id, source)),
+    book.pages.map(async (source) => {
+      const material = await pageMaterial(book.id, source);
+      if (token === loadToken) updateLoadingProgress(++completedPages, book.pages.length);
+      return material;
+    }),
   );
   if (token !== loadToken) return;
 

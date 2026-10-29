@@ -13,7 +13,13 @@
 <div class="reader-controls" aria-label="Page controls"><button class="page-button" id="previous-page" type="button" aria-label="Previous page"><span aria-hidden="true">‹</span></button><span id="page-state" aria-live="polite">Front cover</span><button class="page-button" id="next-page" type="button" aria-label="Next page"><span aria-hidden="true">›</span></button></div>
 <footer class="reader-footer"><span class="gesture-hint">Drag a page · ← →</span><button id="open-artwork" class="text-button">View spread ↗</button></footer>
 <div class="reading-progress" aria-hidden="true"><div id="progress-fill"></div></div>
-<div class="loading-card" id="loading-card" role="status" aria-live="polite" aria-hidden="true" hidden><span class="loading-pulse"></span><span class="sr-only" id="loading-copy">Preparing book</span></div>
+<div class="loading-card" id="loading-card" role="status" aria-live="polite" aria-hidden="true" hidden>
+  <div class="loading-content">
+    <div class="loading-title" id="loading-title">After the Lights</div>
+    <div class="loading-track" id="loading-progress" role="progressbar" aria-label="Loading pages" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="loading-fill"></div></div>
+    <div class="loading-details"><span id="loading-copy">Preparing book</span><span id="loading-percent" aria-hidden="true">0%</span></div>
+  </div>
+</div>
 <p id="reader-error" role="alert" hidden>The 3D reader could not load. You can still view the designed spreads in Contents.</p>
 </main>
 <dialog id="contents-dialog" class="panel-dialog"><div class="dialog-top"><div><span class="eyebrow">CONTENTS</span><h2>From streets to sea</h2></div><button class="close-button" data-close aria-label="Close contents">×</button></div><div id="contents-grid" class="contents-grid"></div></dialog>
