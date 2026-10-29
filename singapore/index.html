@@ -7,6 +7,7 @@
 <title>Between facades — Singapore</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
+<link rel="stylesheet" href="photo-gallery.css">
 </head>
 <body>
 <div id="stage" aria-label="Between facades, a hardcover Singapore photobook" role="img"></div>
@@ -15,6 +16,7 @@
 <header class="top">
   <div class="brand"><span class="book-title">Between facades</span><span class="en">Singapore · 2026</span></div>
   <div class="right">
+    <button id="open-contents" class="text-link contents-link" type="button">Contents</button>
     <a class="text-link shelf-link" href="../../index.html" target="_top">书架</a>
   </div>
 </header>
@@ -44,5 +46,9 @@
 <script src="assets/vendor/three-r128.min.js"></script>
 <script src="book-data.js"></script>
 <script src="book.js"></script>
+<script type="module">
+import { setupPhotoGallery } from "./photo-gallery.js";
+setupPhotoGallery(document.querySelector("#open-contents"), { title: "Singapore · Original photographs" });
+</script>
 </body>
 </html>

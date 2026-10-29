@@ -1,4 +1,5 @@
 import { books } from './books.js';
+import { setupPhotoGallery } from './photo-gallery.js';
 const book = books[0];
 const backIndex = book.chapters.length + 1;
 const base = import.meta.env.BASE_URL;
@@ -28,18 +29,10 @@ export function updateEditionStatus(n) {
 }
 export function setupEdition(options) {
  jumpTo=options.jumpTo;
- $('#open-contents').addEventListener('click',()=>$('#contents-dialog').showModal());
+ setupPhotoGallery($('#open-contents'), { title: 'Japan · Original photographs', base: `${base}assets/originals/` });
  $('#open-about').addEventListener('click',()=>$('#about-dialog').showModal());
  $('#open-artwork').addEventListener('click',()=>openArtwork());
  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
  document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
- const list=[{id:'cover',title:'Front cover'},...book.chapters,{id:'cover',title:'Back cover'}];
- list.forEach((c,i)=>{
-  const b=document.createElement('button');b.className='chapter-card';b.dataset.chapter=i;
-  b.setAttribute('aria-label',`Open ${c.title}`);
-  const img=document.createElement('img');img.src=asset(c.artwork || `assets/spreads/${c.id}.png`);img.alt=c.description||c.title;img.loading='lazy';
-  const label=document.createElement('span');const number=document.createElement('small');number.textContent=i===0?'START':i===backIndex?'END':String(i).padStart(2,'0');label.append(number,document.createTextNode(c.title));
-  b.append(img,label);b.addEventListener('click',()=>{const ok=jumpTo(i);$('#contents-dialog').close();if(!ok)openArtwork(i);});$('#contents-grid').append(b);
- });
  $('#large-image').addEventListener('error',()=>{$('#image-note').textContent='Unable to load image. Please close and try again.';});
 }

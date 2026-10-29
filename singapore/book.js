@@ -749,6 +749,7 @@
   canvas.addEventListener("pointerleave", (e) => { if (!drag) { setPeek(null); cam.azT = 0; cam.elJT = 0; } });
 
   window.addEventListener("keydown", (e) => {
+    if (document.querySelector("dialog[open]")) return;
     if (e.target.closest && e.target.closest("button") && (e.key === " " || e.key === "Enter")) return;
     if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); next(); }
     else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }

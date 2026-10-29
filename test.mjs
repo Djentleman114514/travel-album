@@ -212,3 +212,25 @@ test("HTML assets, return links, and module imports resolve locally", async () =
     }
   }
 });
+
+test("original photo galleries deploy complete optimized assets and wait for interaction", async () => {
+  for (const [directory, count] of [["japan-book-art-edition/dist", 55], ["albums/singapore", 35]]) {
+    const base = new URL(`site/${directory}/`, import.meta.url);
+    const photos = JSON.parse(await readFile(new URL("assets/originals/manifest.json", base), "utf8"));
+    assert.equal(photos.length, count);
+    assert.equal(new Set(photos.map(photo => photo.id)).size, count);
+    for (const photo of photos) {
+      assert.match(photo.id, /^\d{3}$/);
+      for (const size of ["thumbs", "photos"]) {
+        const bytes = await readFile(new URL(`assets/originals/${size}/${photo.id}.jpg`, base));
+        assert.equal(bytes[0], 0xff);
+        assert.equal(bytes[1], 0xd8);
+      }
+    }
+  }
+  const gallery = await readFile(new URL("japan/src/photo-gallery.js", import.meta.url), "utf8");
+  assert.equal(gallery, await readFile(new URL("singapore/photo-gallery.js", import.meta.url), "utf8"));
+  assert.ok(gallery.indexOf('button.addEventListener("click"') < gallery.indexOf('await fetch('));
+  assert.match(gallery, /img\.loading = "lazy"/);
+  assert.ok(gallery.indexOf('card.addEventListener("click"') < gallery.indexOf('large.src ='));
+});
