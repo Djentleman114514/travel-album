@@ -11,6 +11,7 @@ import {
   isPointerOverBook,
   shouldCompleteDrag,
 } from "./drag.js";
+import { constrainTurningPage, settlePage } from "./page-collision.js";
 import "./style.css";
 
 const chinese = document.documentElement.lang.startsWith("zh");
@@ -250,6 +251,7 @@ function memoizeSheetDeformation() {
       previousDirection = direction;
       previousCurveIntensity = curveIntensity;
       flip(pageProgress, direction, curveIntensity);
+      settlePage(sheet, pageProgress);
       dirtySheets.add(sheet);
     };
     memoizedSheets.add(sheet);
@@ -338,6 +340,7 @@ function refreshAllPageNormals() {
 }
 
 function refreshDirtyPageNormals() {
+  constrainTurningPage(flipBook);
   for (const sheet of dirtySheets) sheet.page.geometry.computeVertexNormals();
   dirtySheets.clear();
 }
