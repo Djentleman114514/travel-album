@@ -150,12 +150,17 @@ test("Japan deploys chapter artwork overrides and the matching reader leaves", a
   const book = editions[0];
   const base = new URL("japan/public/", import.meta.url);
   const deployed = new URL("site/japan-book-art-edition/dist/", import.meta.url);
-  const chapter = book.chapters.find((item) => item.id === "e06");
-  assert.equal(chapter.artwork, "assets/spreads/e06.webp");
-  for (const id of ["e05", "12"]) {
-    assert.equal(book.chapters.find((item) => item.id === id).artwork, `assets/spreads/${id}.webp`);
+  const replacements = book.chapters.filter((item) => item.id.startsWith("new-"));
+  assert.equal(replacements.length, 42);
+  assert.deepEqual(book.pages.slice(0, 1), ["assets/pages/cover-right.webp"]);
+  assert.equal(book.pages.at(-1), "assets/pages/cover-left.webp");
+  for (const id of ["morning-panorama", "festival-panorama", "cab-panorama", ...Array.from({ length: 8 }, (_, index) => `yn0${index + 1}`)]) {
+    assert.ok(book.chapters.some((item) => item.id === id), `missing retained spread: ${id}`);
+  }
+  for (const chapter of replacements) {
+    assert.equal(chapter.artwork, `assets/spreads/${chapter.id}.webp`);
     for (const side of ["left", "right"]) {
-      assert.ok(book.pages.includes(`assets/pages/${id}-${side}.webp`));
+      assert.ok(book.pages.includes(`assets/pages/${chapter.id}-${side}.webp`));
     }
   }
   for (const path of [

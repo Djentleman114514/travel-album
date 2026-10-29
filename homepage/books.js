@@ -19,7 +19,7 @@ export const books = [
     height: 0.91,
     cover: "japan-book-art-edition/dist/assets/pages/cover-right.webp",
     reader: "japan-book-art-edition/dist/index.html",
-    pageCount: 72,
+    pageCount: 108,
     description: "Japan, August 2026",
   },
   {
