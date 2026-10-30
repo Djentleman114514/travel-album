@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
-import { createHash } from "node:crypto";
 import { books, bookUrl, selectedBook } from "./homepage/books.js";
 import { restoreOrder } from "./homepage/shelf-order.js";
 import { runInNewContext } from "node:vm";
@@ -234,36 +233,4 @@ test("original photo galleries deploy complete optimized assets and wait for int
   assert.ok(gallery.indexOf('button.addEventListener("click"') < gallery.indexOf('await fetch('));
   assert.match(gallery, /img\.loading = "lazy"/);
   assert.ok(gallery.indexOf('card.addEventListener("click"') < gallery.indexOf('large.src ='));
-});
-
-test("both readers deploy smaller reading copies alongside unchanged full-quality pages", async () => {
-  const { books: editions } = await import("./japan/src/books.js");
-  const context = { window: {} };
-  runInNewContext(await readFile(new URL("singapore/book-data.js", import.meta.url), "utf8"), context);
-  const b = context.window.PHOTOBOOK;
-  const albums = [
-    ["japan/public/", "site/japan-book-art-edition/dist/", editions[0].pages],
-    ["singapore/", "site/albums/singapore/", [b.frontCover.file, ...b.spreads.flatMap(s => [s.left.file, s.right.file]), b.backCover.file].map(p => `assets/pages/${p}`)],
-  ];
-  for (const [source, output, pages] of albums) {
-    const manifest = JSON.parse(await readFile(new URL(source + "assets/pages-reader/manifest.json", import.meta.url), "utf8"));
-    let originalTotal = 0, readerTotal = 0;
-    for (const page of pages) {
-      const readerPath = page.replace("assets/pages/", "assets/pages-reader/");
-      const original = await readFile(new URL(source + page, import.meta.url));
-      const reader = await readFile(new URL(source + readerPath, import.meta.url));
-      const hashes = manifest[page.split("/").at(-1)];
-      assert.equal(createHash("sha256").update(original).digest("hex"), hashes.originalSha256, `regenerate reading copies for ${page}`);
-      assert.equal(createHash("sha256").update(reader).digest("hex"), hashes.readerSha256);
-      assert.equal(reader.toString("ascii", 0, 4), "RIFF");
-      assert.equal(reader.toString("ascii", 8, 12), "WEBP");
-      assert.ok(reader.equals(await readFile(new URL(output + readerPath, import.meta.url))));
-      assert.ok(original.equals(await readFile(new URL(output + page, import.meta.url))));
-      originalTotal += original.length;
-      readerTotal += reader.length;
-    }
-    assert.ok(readerTotal < originalTotal * 0.8);
-  }
-  const deployedLoader = await import("./site/albums/singapore/page-loader.js");
-  assert.equal(typeof deployedLoader.createPageLoader, "function");
 });

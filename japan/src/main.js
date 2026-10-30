@@ -13,13 +13,10 @@ import {
 } from "./drag.js";
 import { constrainTurningPage, settlePage } from "./page-collision.js";
 import "./style.css";
-import { createPageLoader, pageRange, transitionPages } from "../../singapore/page-loader.js";
 
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
   loading: "正在准备相册",
-  pageLoading: "正在准备下一页…",
-  pageFailed: "图片加载失败",
   loadingPages: (completed, total) => `正在加载图片 ${completed} / ${total}`,
   preparing: (title) => `正在准备《${title}》`,
   open: (title) => `打开《${title}》`,
@@ -28,8 +25,6 @@ const readerText = chinese ? {
   spread: (current, total) => `${String(current).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
 } : {
   loading: "Preparing edition",
-  pageLoading: "Preparing page…",
-  pageFailed: "Page could not load",
   loadingPages: (completed, total) => `Loading pages ${completed} / ${total}`,
   preparing: (title) => `Preparing ${title}`,
   open: (title) => `Open ${title}`,
@@ -132,23 +127,6 @@ bookRig.add(flipBook);
 let selectedBook = books[0];
 let loading = false;
 let loadToken = 0;
-let waitSequence = 0;
-let pageLoader = null;
-let retryLoad = null;
-const retryButton = document.querySelector("#retry-pages");
-const pageWait = document.querySelector("#page-wait");
-const pageWaitCopy = document.querySelector("#page-wait-copy");
-const pageWaitRetry = document.querySelector("#page-wait-retry");
-const pageWaitCancel = document.querySelector("#page-wait-cancel");
-pageWaitRetry.addEventListener("click", () => retryLoad?.());
-pageWaitCancel.addEventListener("click", () => {
-  waitSequence++;
-  retryLoad = null;
-  setLoading(false);
-  updateStatus();
-  requestRender();
-});
-retryButton.addEventListener("click", () => retryLoad?.());
 let pointerStart = null;
 let lastStatusKey = "";
 const EDGE_PREVIEW_AMOUNT = 0.055;
@@ -210,8 +188,7 @@ function pageMaterial(bookId, source) {
   if (cache.has(source)) return cache.get(source);
 
   const assetUrl = `${import.meta.env.BASE_URL}${source.replace(/^\/+/, "")}`;
-  const request = textureLoader.loadAsync(assetUrl.replace("assets/pages/", "assets/pages-reader/"))
-    .catch(() => textureLoader.loadAsync(assetUrl)).then((texture) => {
+  const request = textureLoader.loadAsync(assetUrl).then((texture) => {
     resizeTextureImage(texture);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = Math.min(
@@ -224,9 +201,9 @@ function pageMaterial(bookId, source) {
     texture.needsUpdate = true;
     return makePaperMaterial(texture);
   }).catch((error) => {
+    document.querySelector("#reader-error").hidden = false;
     console.error("Page artwork failed to load:", source, error);
-    cache.delete(source);
-    throw error;
+    return blankMaterial;
   });
   cache.set(source, request);
   return request;
@@ -241,7 +218,7 @@ function disposeBookMaterials(bookId) {
       if (material === blankMaterial) return;
       material.map?.dispose();
       material.dispose();
-    }).catch(() => {});
+    });
   }
 }
 
@@ -281,16 +258,14 @@ function memoizeSheetDeformation() {
   }
 }
 
-function setLoading(value, copy = readerText.loading, initial = true) {
+function setLoading(value, copy = readerText.loading) {
   loading = value;
-  const showOverlay = value && initial;
-  loadingCard.classList.toggle("is-visible", showOverlay);
-  loadingCard.hidden = !showOverlay;
-  loadingCard.setAttribute("aria-hidden", String(!showOverlay));
-  pageWait.hidden = true;
+  loadingCard.classList.toggle("is-visible", value);
+  loadingCard.hidden = !value;
+  loadingCard.setAttribute("aria-hidden", String(!value));
   loadingCopy.textContent = value ? copy : "";
-  previousButton.disabled = value || flipBook.currentPage <= 0;
-  nextButton.disabled = value || flipBook.currentPage >= flipBook.totalPages;
+  previousButton.disabled = value;
+  nextButton.disabled = value;
 }
 
 function updateLoadingProgress(completed, total) {
@@ -319,25 +294,22 @@ async function selectBook(book, immediate = false) {
   clearEdgePreview(true);
   selectedBook = book;
   const token = ++loadToken;
-  waitSequence++;
   renderLibrary();
   loadingTitle.textContent = bookTitle(book);
   setLoading(true, readerText.preparing(bookTitle(book)));
-  retryButton.hidden = true;
+  let completedPages = 0;
+  updateLoadingProgress(0, book.pages.length);
   resize();
 
-  // Keep the complete physical stack, but populate its faces only as needed.
-  const pageMaterials = book.pages.map(() => makePaperMaterial());
-  pageLoader = createPageLoader({
-    count: book.pages.length,
-    load: async (index) => {
-      const material = await pageMaterial(book.id, book.pages[index]);
-      if (token !== loadToken) return;
-      pageMaterials[index].map = material.map;
-      pageMaterials[index].needsUpdate = true;
-      requestRender();
-    },
-  });
+  const pageMaterials = await Promise.all(
+    book.pages.map(async (source) => {
+      const material = await pageMaterial(book.id, source);
+      if (token === loadToken) updateLoadingProgress(++completedPages, book.pages.length);
+      return material;
+    }),
+  );
+  if (token !== loadToken) return;
+
   flipBook.scale.x = book.ratio;
   // Quick FlipBook stacks sheets downwards from the spine. Lift the whole
   // stack above the desk, including the first turned sheet in long editions.
@@ -357,74 +329,9 @@ async function selectBook(book, immediate = false) {
     }
   });
   rememberBook(book.id);
-  await waitForPages(pageRange(0, book.pages.length - 1, book.pages.length), () => {}, true);
+  setLoading(false);
   updateStatus();
   requestRender();
-}
-
-async function waitForPages(indices, action, initial = false) {
-  if (!pageLoader) return;
-  const token = loadToken;
-  const waitId = ++waitSequence;
-  const loader = pageLoader;
-  if (loader.ready(indices)) {
-    setLoading(false);
-    action();
-    updateStatus();
-    requestRender();
-    return;
-  }
-  setLoading(true, readerText.loading, initial);
-  retryButton.hidden = true;
-  pageWaitRetry.hidden = true;
-  pageWaitCopy.textContent = readerText.pageLoading;
-  if (initial) updateLoadingProgress(0, indices.length);
-  const hintTimer = initial ? null : setTimeout(() => {
-    if (token === loadToken && waitId === waitSequence) pageWait.hidden = false;
-  }, 200);
-  let completed = 0;
-  let failed = false;
-  try {
-    // Queue the complete urgent batch before tracking individual completions.
-    const batch = loader.ensure(indices);
-    await Promise.all([batch, ...indices.map(index => loader.ensure([index], false).then(() => {
-      if (initial && !failed && token === loadToken && waitId === waitSequence) {
-        updateLoadingProgress(++completed, indices.length);
-      }
-    }))]);
-    if (token !== loadToken || waitId !== waitSequence) return;
-    document.querySelector("#reader-error").hidden = true;
-    retryLoad = null;
-    setLoading(false);
-    action();
-    updateStatus();
-    requestRender();
-  } catch (error) {
-    failed = true;
-    if (token !== loadToken || waitId !== waitSequence) return;
-    if (initial) {
-      loadingCopy.textContent = chinese ? "图片加载失败，请重试" : "Pages could not load. Please retry.";
-      retryButton.hidden = false;
-    } else {
-      pageWaitCopy.textContent = readerText.pageFailed;
-      pageWaitRetry.hidden = false;
-      pageWait.hidden = false;
-    }
-    retryLoad = () => waitForPages(indices, action, initial);
-  } finally {
-    if (hintTimer !== null) clearTimeout(hintTimer);
-  }
-}
-
-function navigateToPage(page) {
-  if (loading || pointerStart?.dragging) return;
-  const target = Math.max(0, Math.min(flipBook.totalPages, page));
-  const indices = transitionPages(Math.floor(flipBook.progress), Math.ceil(target / 2), selectedBook.pages.length);
-  void waitForPages(indices, () => {
-    clearEdgePreview(true);
-    flipBook.currentPage = target;
-    requestRender();
-  });
 }
 
 function refreshAllPageNormals() {
@@ -487,11 +394,6 @@ function updateEdgePreview(event) {
     return;
   }
 
-  const needed = transitionPages(sheet, sheet + direction, selectedBook.pages.length);
-  if (!pageLoader?.ready(needed)) {
-    pageLoader?.prefetch(needed);
-    return;
-  }
   if (previewActive && edgePreview.direction !== direction) clearEdgePreview(true);
   edgePreview.baseSheet = sheet;
   edgePreview.direction = direction;
@@ -576,11 +478,19 @@ function takeEdgePreviewForDrag() {
 }
 
 function nextPage() {
-  navigateToPage((Math.ceil(flipBook.currentPage / 2) + 1) * 2);
+  if (!loading && flipBook.currentPage < flipBook.totalPages) {
+    clearEdgePreview(true);
+    flipBook.nextPage();
+    requestRender();
+  }
 }
 
 function previousPage() {
-  navigateToPage((Math.ceil(flipBook.currentPage / 2) - 1) * 2);
+  if (!loading && flipBook.currentPage > 0) {
+    clearEdgePreview(true);
+    flipBook.previousPage();
+    requestRender();
+  }
 }
 
 function updateStatus() {
@@ -629,12 +539,6 @@ canvas.addEventListener("pointerdown", (event) => {
     ...metrics,
   });
 
-  const direction = preview?.direction ?? chooseDragDirection(sheet, maxSheet, event.clientX, metrics.centerX);
-  const needed = transitionPages(sheet, sheet + direction, selectedBook.pages.length);
-  if (overBook && !pageLoader?.ready(needed)) {
-    void waitForPages(needed, () => {});
-    return;
-  }
   pointerStart = {
     pointerId: event.pointerId,
     x: event.clientX,
@@ -781,7 +685,9 @@ resize();
 renderLibrary();
 setupEdition({ jumpTo: (spread) => {
   if (loading) return false;
-  navigateToPage(spread * 2);
+  clearEdgePreview(true);
+  flipBook.currentPage = spread * 2;
+  requestRender();
   return true;
 } });
 selectBook(books[0], true);
