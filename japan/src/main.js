@@ -13,7 +13,7 @@ import {
 } from "./drag.js";
 import { constrainTurningPage, settlePage } from "./page-collision.js";
 import "./style.css";
-import { createPageLoader, pageWindow, transitionPages } from "../../singapore/page-loader.js";
+import { createPageLoader, pageRange, transitionPages } from "../../singapore/page-loader.js";
 
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
@@ -357,15 +357,9 @@ async function selectBook(book, immediate = false) {
     }
   });
   rememberBook(book.id);
-  await waitForPages(pageWindow(0, book.pages.length), () => {}, true);
+  await waitForPages(pageRange(0, book.pages.length - 1, book.pages.length), () => {}, true);
   updateStatus();
   requestRender();
-}
-
-function prefetchAroundCurrentPage() {
-  if (!pageLoader || !selectedBook?.pages) return;
-  const spread = Math.ceil((flipBook.currentPage || 0) / 2);
-  pageLoader.prefetch(pageWindow(spread, selectedBook.pages.length, 8));
 }
 
 async function waitForPages(indices, action, initial = false) {
@@ -377,7 +371,6 @@ async function waitForPages(indices, action, initial = false) {
     setLoading(false);
     action();
     updateStatus();
-    prefetchAroundCurrentPage();
     requestRender();
     return;
   }
@@ -405,7 +398,6 @@ async function waitForPages(indices, action, initial = false) {
     setLoading(false);
     action();
     updateStatus();
-    prefetchAroundCurrentPage();
     requestRender();
   } catch (error) {
     failed = true;
@@ -608,7 +600,6 @@ function updateStatus() {
   canvas.dataset.left = selectedBook.pages[Math.max(0, shown - 1)] ?? "";
   canvas.dataset.right = selectedBook.pages[shown] ?? "";
   updateEditionStatus(spread, selectedBook);
-  if (!loading) prefetchAroundCurrentPage();
   previousButton.disabled = loading || shown <= 0;
   nextButton.disabled = loading || shown >= total;
 }

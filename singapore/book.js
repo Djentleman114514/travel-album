@@ -1,4 +1,4 @@
-import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js";
+import { createPageLoader, pageRange, transitionPages } from "./page-loader.js";
 
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -515,9 +515,6 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
     $("#prev").disabled = value || k === 0;
     $("#next").disabled = value || k === NL;
   }
-  function prefetchAroundCurrentPage() {
-    pageLoader.prefetch(pageWindow(spreadIndex(), pageFiles.length, 8));
-  }
   async function waitForPages(indices, action, initial = false) {
     const waitId = ++waitSequence;
     if (pageLoader.ready(indices)) {
@@ -527,7 +524,6 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
       $("#page-wait").hidden = true;
       setNavigationDisabled(false);
       action();
-      prefetchAroundCurrentPage();
       return;
     }
     pagesLoading = true;
@@ -565,7 +561,6 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
       $("#page-wait").hidden = true;
       setNavigationDisabled(false);
       action();
-      prefetchAroundCurrentPage();
       needsRender = true;
     } catch {
       failed = true;
@@ -910,7 +905,6 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
     const k = spreadIndex();
     if (k === lastK) return;
     lastK = k;
-    if (!pagesLoading) prefetchAroundCurrentPage();
     $("#label").textContent = SPREADS[k];
     $("#live").textContent = SPREADS[k] + ". " + DESCRIPTIONS[k];
     stage.setAttribute("aria-label", BOOK.title + ". " + SPREADS[k] + ". " + DESCRIPTIONS[k]);
@@ -954,5 +948,5 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
   const requestedId = decodeURIComponent(location.hash.slice(1));
   const requestedIndex = requestedId === "back" ? NL : BOOK.spreads.findIndex(s => s.id === requestedId) + 1;
   boot({ k: requestedIndex });
-  void waitForPages(pageWindow(clamp(requestedIndex, 0, NL), pageFiles.length), () => {}, true);
+  void waitForPages(pageRange(0, pageFiles.length - 1, pageFiles.length), () => {}, true);
 })();
