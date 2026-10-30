@@ -1,0 +1,434 @@
+{
+  "cover-right.webp": {
+    "originalSha256": "12d759fb57c2ab53bb9454f2ba1341428402a58ca7a522cd23cb178c01f50e5a",
+    "readerSha256": "80296a47b0eb799568fc0a9c51f1039d7796b5dc0e0d2f2dd59eef3b1d3e1b89"
+  },
+  "new-01-night-passage-left.webp": {
+    "originalSha256": "fc9166e639d0d7635904f3b44fa95b34622048462dda4b89b83d41292c9b6200",
+    "readerSha256": "5eaad12ab9cbfc45ec1d67a089215c6c0e07053019a050f6a3cfbaad9c624c94"
+  },
+  "new-01-night-passage-right.webp": {
+    "originalSha256": "de22114565f9654562bb6ec88245884da8d886d310c270fcc4b47cec1e6fa391",
+    "readerSha256": "a77ed2381a7f5b13f43e0c1fce070d4ec3da5a28dee3b5b517711b073bb6c22b"
+  },
+  "new-02-under-the-viaduct-left.webp": {
+    "originalSha256": "2ab287b93c10abf2a01a63258c8a96fd6d3935f43be73317cefdfb282a5a7e46",
+    "readerSha256": "23438367afb3ea45728445653b340bd96814cb55735b53b026a5b302383dc14b"
+  },
+  "new-02-under-the-viaduct-right.webp": {
+    "originalSha256": "0a66229becb78a07ef002e035531a923d97492ae89315e76cc4afa62ea1809b9",
+    "readerSha256": "666c2a0e6461b7c0b36edd4c7fac62f5cfe5164e6255f071ed34cb5d2f8ddd5d"
+  },
+  "new-13-summer-slope-left.webp": {
+    "originalSha256": "7863edd242b395b9f0f49a2afa9665479498bc0b276a36e30b1134bd002c4198",
+    "readerSha256": "f5c12b61a50e18d31cfd14e12832cc3bee25c427e8c3b551ce9764f8132dedda"
+  },
+  "new-13-summer-slope-right.webp": {
+    "originalSha256": "5ec7c7ab713db9a5650b1e8a9ab0b919fb98ae851eac7fd3b05f2c09862a3222",
+    "readerSha256": "f55c4454d504bc4b5cc2f34855ba586da02d8d5112d63930a51325557c097c4a"
+  },
+  "morning-panorama-left.webp": {
+    "originalSha256": "2bd4048754628fa2b84871126296f16a997ffabb181bf78b3465668241d9f5d1",
+    "readerSha256": "3fd27665b2acf3d3ffa5b552cdc90a75ec095aef8c0d584240deae5b0a7c84b8"
+  },
+  "morning-panorama-right.webp": {
+    "originalSha256": "219ba3ed1c622423e3e92661c9a7735baead5f1cdd2e9eeb7262e0ae2d69adcd",
+    "readerSha256": "b0fe58fde79281d4b0dc584614625495940e58b4c4342f77923916ca74d51c35"
+  },
+  "new-03-lantern-and-roof-left.webp": {
+    "originalSha256": "b2d5b16b436279fb5b0b3bcaff799cbe0110eae0590d6bffa701473104d32de0",
+    "readerSha256": "d59cfab4f6054cc68e08ef93f9546143bc6f6c154cce630e6e392c766f2e2a0d"
+  },
+  "new-03-lantern-and-roof-right.webp": {
+    "originalSha256": "48753e85c1af6840341e17b6ae01febcec797b412a51173e946b755f04a6fdc3",
+    "readerSha256": "ccfc00f728b48b653ef7cff3a39605d5a561a4d4f1e143e9e0908613ff8da908"
+  },
+  "new-04-temple-facade-left.webp": {
+    "originalSha256": "b53a5b67f2ddc60b944218ba2b46982b304657c87f37bd143c83637572e98d7c",
+    "readerSha256": "25e2260e5157744c6a9ce86149c03c4ceaa97f8610b5852470810ee79126a769"
+  },
+  "new-04-temple-facade-right.webp": {
+    "originalSha256": "93ae93de885e20b06da15a95c83dbc82d9c6d3c3e2c76faa75e7118e25733bab",
+    "readerSha256": "c1e13c64626099aa94bb22044b539dfda240c63bf8fa4f15693d4ce2ff41150c"
+  },
+  "new-05-lantern-gate-left.webp": {
+    "originalSha256": "c356ca638687d3185dc29fd459e81e4e47b98c103b4f2b9e945c19251ec12bac",
+    "readerSha256": "66670b4aee429648b892e66fdde312a59641e5264285cee5a32d63edbbe3ac38"
+  },
+  "new-05-lantern-gate-right.webp": {
+    "originalSha256": "011d95a8aa4f652840007652070c5c4d472aa28d0f17b19fe4a21f42dbec37ca",
+    "readerSha256": "20f16d67c5bb2770e42e408b3524c3e01b91e56b2a25b0459aec76b18103fa28"
+  },
+  "new-06-temple-board-left.webp": {
+    "originalSha256": "057dadb4b1fecbba07fb2916b9c3f425d13bf6db394821957c3bfee799a5e968",
+    "readerSha256": "b2d3655fa11531d9499e4ef26b14dd9ef47b5e434fb14e79aaaa906ce2e39f68"
+  },
+  "new-06-temple-board-right.webp": {
+    "originalSha256": "3d5e77805697d0ec83f7a9ee90ee8d91dddc126922687fe103629a869d56cb8f",
+    "readerSha256": "38efd596efa232a86cac64d8747c742758fb3123ee8f2d389a0a790534d77eae"
+  },
+  "new-07-tower-street-left.webp": {
+    "originalSha256": "2875d8234a6d4ece774c50b46a217758f110ce56fd1231e23a3f70370e5922c6",
+    "readerSha256": "00f34ace40634ff3a3f6d88a6a42418c6981a1969bb8b5be9d8e02e25487c42d"
+  },
+  "new-07-tower-street-right.webp": {
+    "originalSha256": "a1ec1e991474636f903020a286612af1a60002498912d8e2f2ec39643aeb0f91",
+    "readerSha256": "870b3494a7f970f729f74469bbff5de9b472c976806801e8b26a7c7837189b69"
+  },
+  "new-09-train-viaduct-left.webp": {
+    "originalSha256": "3ee6811b6c08b9015d026e8e5b716156d5113a40d98dba876bf40ad078632c04",
+    "readerSha256": "09db563bf64b9cbbf3d2d2b0119b6e644911840def6205da9c148d14f07e2f48"
+  },
+  "new-09-train-viaduct-right.webp": {
+    "originalSha256": "a3cc0a3ea8a29a7684961ded5932d00162b18a6773122115ceba6de2c29c8543",
+    "readerSha256": "1b7213d80ee238325e4595f1cdf538ba623690a037056b560558512ad53dff89"
+  },
+  "new-08-tower-alley-left.webp": {
+    "originalSha256": "d7193494f2feffbc88d4ce01e5e3b46fa67cf5570f8f829c63b84f2a04464bf7",
+    "readerSha256": "9bda5acf03d5e6c7bb0ea1cbc47e42a52b8a5e59d840da9743743f442f47bcf9"
+  },
+  "new-08-tower-alley-right.webp": {
+    "originalSha256": "4baf01717bab39f630ae1a95b0829c0c3cec827e8e98bff7d1f6c7d1a8c0679a",
+    "readerSha256": "adeae262b60d8471443b91252bea3ed1b25346c4a95ea184d1fb57e933000201"
+  },
+  "new-10-electric-street-left.webp": {
+    "originalSha256": "bf97a5e275379ea9edf6bb37204f9ca4f9617b39f7a0556e5f5cc531d4a36fff",
+    "readerSha256": "7f469e890f3bd6729d66e7905d3c19e5315c949c0a289252fd3ee5677bd9103b"
+  },
+  "new-10-electric-street-right.webp": {
+    "originalSha256": "bb3c476fd5f92313352882efc5034af4a4d75840216fcba1f9b135ae55c0e8d4",
+    "readerSha256": "564c1ef00dc22517cecaea14040ed70aacef0ca117a256fa323ddb7785dade0a"
+  },
+  "new-44-city-railways-wide-left.webp": {
+    "originalSha256": "2a9354acf25a9e3076a9563ef5332246a9a1ade4cef85fb2148a088f558ca0e8",
+    "readerSha256": "64182913ae4f1a93adc06784edf366156a5587d7d2942dc73d31961c76617ccb"
+  },
+  "new-44-city-railways-wide-right.webp": {
+    "originalSha256": "f144c02a7bc37bf4b087aaf70b90f8925e35888f4a90db1939055dd1bdf71bb3",
+    "readerSha256": "9e01b71c8bedd61e3a67220a113aa0431c35a446901227eba9e77b88649ce79d"
+  },
+  "new-45-crossing-at-night-wide-left.webp": {
+    "originalSha256": "a5537f8bfb201d0080478d360d1a5c0fd4c90b1e4642f6eee6994d004c548100",
+    "readerSha256": "661866cbf3b4edbd61ac4460916722a947c97b0170f911ce0f161e8d29456ce9"
+  },
+  "new-45-crossing-at-night-wide-right.webp": {
+    "originalSha256": "85268f74f004a4aef075a85f7115e43464da012b66ae9c9d0ee20fabf41b6423",
+    "readerSha256": "e9a266963139c1a4567911e19d5c9ce1a97556a7efa72735ca2b5e86f32503b3"
+  },
+  "new-11-tower-close-left.webp": {
+    "originalSha256": "8d181032ae57198df48c05a1be09d70a0bad8385c2f53c209e9343bf7176a4e6",
+    "readerSha256": "0c2803cb0c0ac53bdcc847b58de9ee264933312524c6b3187486acf7d63755bc"
+  },
+  "new-11-tower-close-right.webp": {
+    "originalSha256": "a5e5e7480b5b1c1db9fe3f58a4d3f26a4ea77412aa19f79580b6e2cf2a20f320",
+    "readerSha256": "55ca5a701432ee37f7212c3be1b2e54492549f9df1b634c17675957ffa6b4e6c"
+  },
+  "new-18-night-screens-left.webp": {
+    "originalSha256": "db6f55db62842a517e35460e35f405cc524e23a2cd282b5bbe2613a6b23f16ec",
+    "readerSha256": "b89787ad3787bf3729dd1bd094edec6730f9f0eb947b93098a3dec012df98e8a"
+  },
+  "new-18-night-screens-right.webp": {
+    "originalSha256": "99882a6849ab2aad6587622d71197b70fb42f57ca44038a180ef8a58e4a6cd32",
+    "readerSha256": "e256fa01a8cc5b18a2bd2255c2da7c01dcfd23ff63d0963acbc68ff1c6d312ae"
+  },
+  "new-14-shibuya-crossing-left.webp": {
+    "originalSha256": "ebd79b134ad9debe80f035eabd9b63ca41bf4aa3207d65458311be564aa79194",
+    "readerSha256": "f5d1a36670b8a5bfc028094b46cffabe32dff34da89bf4405ae3f265636ec635"
+  },
+  "new-14-shibuya-crossing-right.webp": {
+    "originalSha256": "392a2b25c87b3fcf91114b565e003de7430e05bc3a4fd38db070a90ead73232e",
+    "readerSha256": "ed33e6b343b8ee1ba1554d0c8ad12c4a3ac8e8b7040c31911c12891e7cc5f119"
+  },
+  "new-17-curving-road-left.webp": {
+    "originalSha256": "f193cde671271851d6f0ba480f1103ada9c639afc8d113146ec85a52c58add15",
+    "readerSha256": "a9f1d9e2de676fb2822d8a493d1b21dcdf4a16efd3ebf2a1817806285139c59b"
+  },
+  "new-17-curving-road-right.webp": {
+    "originalSha256": "5a3ad51ecda86273aa25ff992c3cd2b2085edf787258f9d451b6e5c99382035e",
+    "readerSha256": "da87faa3e8f73c2f3b7221f24af2f4c1f14c63c490e53b623b5dd1e7f14564f2"
+  },
+  "new-27-neon-lane-left.webp": {
+    "originalSha256": "5794b112a401f59f3ab9ac26236c133c082370c7eb80fb0c9fb4db323cfebbba",
+    "readerSha256": "4609b68ffdb234f79dac6fa6746907c1574c63feea122d9a4e7b1ae0def5b75e"
+  },
+  "new-27-neon-lane-right.webp": {
+    "originalSha256": "52f66d8fe5be574f329e1ff1a67bc178dcda5e6cfd3a9d467031a0b55f2d4490",
+    "readerSha256": "4743d40be1eead95eb86a798d7bc3145cf6f6796087f05edc855cb3b4b307abb"
+  },
+  "new-15-city-artery-left.webp": {
+    "originalSha256": "b39b0c154fc3a2516371bdfb13f73d232e68c74fe765228f846f03a9ae8470b9",
+    "readerSha256": "46870808cd53fd53a26375e6d1f6b45ddcd588dd62af1075a048e6b93a2a1b5c"
+  },
+  "new-15-city-artery-right.webp": {
+    "originalSha256": "0e18bffa565f59dca6555a4edc609935aafde67a583e12b6e32104639ca4d9ca",
+    "readerSha256": "7aae4133ca3511fbfbe648e505ac3d1b6c9096343561e691ec180bc4db833b4b"
+  },
+  "new-16-city-lights-left.webp": {
+    "originalSha256": "dddf56e9d9821ed50ed36ac083805be6e23da9c1beaeee99b9fdc5a464b71bb0",
+    "readerSha256": "34917923a109a0ec921a456049dd9937270668600fb7f8179029d97e56e2de78"
+  },
+  "new-16-city-lights-right.webp": {
+    "originalSha256": "1a57df190be8f78726f54c746717d5e0a2bf5541e3593d4ad01244ee38436645",
+    "readerSha256": "0618b78cb17dda30a30420fe494bf0b8b0f19d5b0e21beb655d5523fb70ad223"
+  },
+  "new-23-window-light-left.webp": {
+    "originalSha256": "5217887fe09940e8d81a18018fc9c39ba2222ac28b2b0da629f3adb227088e06",
+    "readerSha256": "e2f9ca29b5fcda2e947ff2813396e3639a6f53baf3f4a3927951be96d6c18bf6"
+  },
+  "new-23-window-light-right.webp": {
+    "originalSha256": "0ca3282ddf457c4c53579cd142a3f773210e053a56ec4e836875cdb6e32576cb",
+    "readerSha256": "29bb8673c77d04b9d95bd544adb9fe48f5d9524e62d2d778cce9d5d74f26d536"
+  },
+  "new-19-wooded-signs-left.webp": {
+    "originalSha256": "5df6e0a7717b740345905705100128409a263ddf739dd5db576d7ae7aa8164f9",
+    "readerSha256": "460f36d15ec4b8afd42f60836a0fe6c185528dce33a4bf085a8b10f6bf33cfd0"
+  },
+  "new-19-wooded-signs-right.webp": {
+    "originalSha256": "8240744bf43c3441a7000b03d16d6609a72aa926ee6bc55907c0bba8d4c49f2e",
+    "readerSha256": "42be225e7609dac3b4bd4dc82b902c0836a7cf61b02bd405446f6e7fb698ace4"
+  },
+  "new-22-armor-left.webp": {
+    "originalSha256": "df08d4d782db08aa3f90799df2e0aa8a788128a4e46a754f44c87107753bde0c",
+    "readerSha256": "7d085d5578a48cdc790cbe21cc856dd91fe1bc83ac5c18084ae1996d4ed87572"
+  },
+  "new-22-armor-right.webp": {
+    "originalSha256": "f71e62fc88abe6a2ebea7fa28bd84636ad0b8c2a7f63f099b3b150959dbfadda",
+    "readerSha256": "f2773626b842af3e188ac88ff3971230064ab758df8ae088ca64d51372bfa77d"
+  },
+  "new-20-torii-path-left.webp": {
+    "originalSha256": "93db4494463fe63aa3297b37a01097d681f20a264780ef31b5851c5365f461b2",
+    "readerSha256": "ff46cf8709cdb0bd7fb4493b7fb7704df031e828313be8d8121d1a94bd376253"
+  },
+  "new-20-torii-path-right.webp": {
+    "originalSha256": "5df4a500baf162ad6e7125f8b746345212b80cbddbf1b6eb707c3a18b549ae06",
+    "readerSha256": "ed124d0b6cd36e78eedcff3482d71fa62b5ce4349c39cf502cfb726a2e8ed13c"
+  },
+  "new-21-before-the-shrine-left.webp": {
+    "originalSha256": "5b0e3a7a60e90bd082444fe0e27c83b22cb98b946783015253e851fb4557cf05",
+    "readerSha256": "8d1c6996ddaf9aa577ab059ffec8fa26b67b2ec760010d330dc1bede5f6ca2eb"
+  },
+  "new-21-before-the-shrine-right.webp": {
+    "originalSha256": "47dc38f33fe7997b4866c06219fd0191be6ad26a6cdc3879de0abe9250e506c4",
+    "readerSha256": "21dd04ae6f85f6511d78a5da84f5778e9f8b1209ee3673649f3581221938cd3b"
+  },
+  "new-24-34-stillness-in-stone-left.webp": {
+    "originalSha256": "63720bd83ddc2014ce95cbb8a9e48123aae829f57b36e2c0f1017645c555356d",
+    "readerSha256": "dea2bfa4b88288935db59f79539ba27d3cb4275ab38baee899b1fc6c09717962"
+  },
+  "new-24-34-stillness-in-stone-right.webp": {
+    "originalSha256": "a8e950f4a1bf9773015596d07cc085cee4a60888b1887fdf82c314ee9b2a5a9b",
+    "readerSha256": "6f243af557d2be3e429aec104f9a78ea892bf2b971afe2529b766c623572b4a0"
+  },
+  "festival-panorama-left.webp": {
+    "originalSha256": "606d42ba2b80400136047e65405d87b6b7b23ca69358953003607b138187a4d5",
+    "readerSha256": "ae3a96f7436252b29cb57afe2f0c83459bd5486388260427c326ba6305b6e4d2"
+  },
+  "festival-panorama-right.webp": {
+    "originalSha256": "a7c9e23bc2345c10bd14475c400665a719bd58eadd925a1258f7997008df8a2c",
+    "readerSha256": "a6a5d308b269cd1e377b15b20f3b2241ce7ccd27536a14445a8a8ab7746003fe"
+  },
+  "yn01-left.webp": {
+    "originalSha256": "096d33a466be935762ff1505a2bceeed7807691d819f309f580fae3f2a3df3f2",
+    "readerSha256": "f9629c4a13cf536751d2f7b0cc9b8b1cc756f8d64e613533d5306a3ee351cd57"
+  },
+  "yn01-right.webp": {
+    "originalSha256": "2ff0541ccc4b84686a06ce683724f9f7cab19cc1f38f11b69839450d160582f5",
+    "readerSha256": "4791b6d2ff371932daad0e5348a8a338d98a3e2b3985962ba840565cb2a18f61"
+  },
+  "yn02-left.webp": {
+    "originalSha256": "23f669f6eff747d6893fe60f2df8f43fa8d2409e9c3c22f27fc3835dfe03c616",
+    "readerSha256": "352ba9eb09f3c628ad85356f216387fa77fdcc6ede25a9c89bc7fc2c0321ecbc"
+  },
+  "yn02-right.webp": {
+    "originalSha256": "7a79c0bcbbdb3de00033c2c83e5c6ecd7107370b6932b60f34b585c28870605f",
+    "readerSha256": "bb66baa9b7c8af5116113da188ba093f340ab49b9a74595e576e179dc25e3fa4"
+  },
+  "yn03-left.webp": {
+    "originalSha256": "4aa87f77f3b02cd390ea81352673eddce738f33a6258deb986e088d5e0458a5f",
+    "readerSha256": "2b1a98d8e97fc25b3d1ec7c438eeada9672568a41a19b897a2b785d5f8fa89e0"
+  },
+  "yn03-right.webp": {
+    "originalSha256": "01e25ead3beb619544757b2e8b5ca90b24e2282146df356260920e7f763d0315",
+    "readerSha256": "86a510cca9854fd1c673aae28b50b27fea271efb605a9c5c48b9191e7cf09268"
+  },
+  "yn04-left.webp": {
+    "originalSha256": "4c330a8abe129c0201a52929c138924fe279e8b573ad36f5468586e0480b4490",
+    "readerSha256": "94cd1577afe71cbb4986bdacade515f216997862f7e0580fcfbefdf447b6c14b"
+  },
+  "yn04-right.webp": {
+    "originalSha256": "62ec57105915b500fd394b50c188c6df33ee715df6c9e3d379c02a4447dd5c7f",
+    "readerSha256": "22fc0adf9aa7a26c970b54e7b0b806b1d764867c52e926343609c08dc0978e42"
+  },
+  "yn05-left.webp": {
+    "originalSha256": "85cf71e918dadf474551fbdd0a894a7b3ae42b9700f52480ba1da7ee93a0a58b",
+    "readerSha256": "002508014a91e4a82ff6c6eaf57b91a02b6d183baa02bea0bcfeb5905aedd2e5"
+  },
+  "yn05-right.webp": {
+    "originalSha256": "111504d78a4697f5428f4ad665fc267bc82ee9b8be15c73c4a851fed0dd1940e",
+    "readerSha256": "f37390aaebc0e99aeaf7e6143cf9ea0ef68cfaa9bf11a579eafe48418ae9fe76"
+  },
+  "yn06-left.webp": {
+    "originalSha256": "94440956e086ddc5004b13e7e6fb9993572ffd5497d35685995f8f4e52ef05ce",
+    "readerSha256": "85eb5409a230d9051bb7b66d46381f56a0393f072185e6269c3977c1a86843ce"
+  },
+  "yn06-right.webp": {
+    "originalSha256": "20293e70f86b3ae7e0c69b53121f8c3cb399322d6049a42ca13245691934db26",
+    "readerSha256": "23c016eaa5b585a6c93c6450897e5a142eb878f68e622454fbbe2d1e969c7100"
+  },
+  "yn07-left.webp": {
+    "originalSha256": "85447ee179d79b6d60f5b7ab368e079d6bee16b62dc7e15d2c98cd6c4b15b981",
+    "readerSha256": "40b80520c29c808fada96231ca012162680ca329653cf14cbfbb589502027ec8"
+  },
+  "yn07-right.webp": {
+    "originalSha256": "4345a81efff996f91de65d948d698fd9fd3134976b6800a495801981db11f4a4",
+    "readerSha256": "29d9fee40bedb0f9049b6b81a8993b745b8dd8311cff69ffafb4e43dcdb23e4c"
+  },
+  "yn08-left.webp": {
+    "originalSha256": "4651357c81e523d000bd142bdc225d370081b63f8e79a93526185c6071f99651",
+    "readerSha256": "e997c2fb1a6981a3565d162e365fa8d90f8f6468a5f516641b704c14682ee8da"
+  },
+  "yn08-right.webp": {
+    "originalSha256": "26891f9afba75f216e9a1228e15c75e41eb4d903d9c9d933ddcf1c3ca3ac7a37",
+    "readerSha256": "8365fe7e1adb7b1f17162734ccef39ccca03f8b5857b44f28d7b52e273952a5a"
+  },
+  "new-26-evening-shopping-street-left.webp": {
+    "originalSha256": "1d6daf419d525f5ab34c6b8c24653d1390972d5ae4ae9f3462180dcfc67eb168",
+    "readerSha256": "c622cf022eea62c9b9530be4e91eb53e0efa3b9da684fec07741c1b42aadd565"
+  },
+  "new-26-evening-shopping-street-right.webp": {
+    "originalSha256": "8ed6ba7af32494bf30503b90a649793b66b22fe2235b1495e0f64bb9ba65d9fa",
+    "readerSha256": "22df6c544d00b68204e48295dc8d24d0e2bc48185b06d1a8e0cb37ec2238741a"
+  },
+  "new-28-neighborhood-crossing-left.webp": {
+    "originalSha256": "6375727c10f1bae40505f3228e427348baf9e4442d0c93572a0a18e0d9f76716",
+    "readerSha256": "853407cc8a4f40c3b6226ec594e5b9a117214f739ae194b1c8f979367bfda990"
+  },
+  "new-28-neighborhood-crossing-right.webp": {
+    "originalSha256": "994e7d37833afae60838db5a6945335fe6159005354f7bfc3bd4fd90dc7ed516",
+    "readerSha256": "bb75db7e6779261993b1a860695ea98bdef7385cacdf2cf3797dfcceb02780fc"
+  },
+  "new-30-yokohama-left.webp": {
+    "originalSha256": "cac06c91b9832e7e44db743da1ba387ecbc64c407c603d4cf09d8a7d8c362794",
+    "readerSha256": "01484f4c53cb334ca29c2a1a8c46fab5524e33f9edb19ccf2284ea77baf0d16b"
+  },
+  "new-30-yokohama-right.webp": {
+    "originalSha256": "110e34f083603d4421bb9ec50f63d3c427896ca5c004f02cbce20257cc92dad3",
+    "readerSha256": "f91093914ba3f7c33619d7baf0c584b81ffa98ee1228422d27991decc47162aa"
+  },
+  "cab-panorama-left.webp": {
+    "originalSha256": "88f18cf3af3bd0e3fa99e67b65d97a51d0bfb6581ee23d8d32e1c2f45b760eb6",
+    "readerSha256": "f2f8deb1599af4343c4fe42c86a7f40c73747612fa58e224849887d5ec4fdf6c"
+  },
+  "cab-panorama-right.webp": {
+    "originalSha256": "a0034f867cb5735d65548c31ca97bff2122fccb38093f904e7e5a0c4b55b50c2",
+    "readerSha256": "00b682d0d862ded62057f530a57e3cf0cde6d684dff1500a54545ec81606b53b"
+  },
+  "new-29-station-curve-left.webp": {
+    "originalSha256": "c326a1eff43e538b423b91d9dd857452c02c04b613227167c2ec5a0c47af0093",
+    "readerSha256": "913feebd6a7182779e6a0f5a462dc2a7993c636b46af9f88b31145341acf3e66"
+  },
+  "new-29-station-curve-right.webp": {
+    "originalSha256": "8b4e11150174ad5c9a2bb2a6bfe78511695834cac0753e192b12dddda57fc550",
+    "readerSha256": "7ff23ed38ca6408918778ca6f9f124c8fd5dcb2973a94dec4738be42501571f9"
+  },
+  "new-42-train-platform-left.webp": {
+    "originalSha256": "7ed2c5188a39224b357640d313ae515230c597664eda6171e5b86db82443e804",
+    "readerSha256": "d75ffc172f09e64d0285c0c772046bc48ea66b43582a7d03f5091a05707f0baa"
+  },
+  "new-42-train-platform-right.webp": {
+    "originalSha256": "c2aa7797a22cd8d61ef0e0e4cb789e5b5d5052490405a9cf7e7810ba95bd6e2b",
+    "readerSha256": "765963520ef86bc0aee77360372784c7196a4dfaf65ecc9df9e5119c16ea04cc"
+  },
+  "new-31-coastal-crossing-left.webp": {
+    "originalSha256": "e5488ccc0c8af021a2e0192f48e7f23104cc254d3f07c124e16c8b5768bec000",
+    "readerSha256": "8c5bbafe5118397255ad63816feb33285e7e448d927fb3b9dd26c64b321966de"
+  },
+  "new-31-coastal-crossing-right.webp": {
+    "originalSha256": "80d666ed35af88dd635295b612f01a0f1a7eccd406aba48871d7a6900677230f",
+    "readerSha256": "c8fd41cd9508605c29f7d24e914ecdd4a565e02ad3f952cca4f6f29a77bbd7d6"
+  },
+  "new-32-clouds-and-wires-left.webp": {
+    "originalSha256": "0f040764ec5ca01395472f2ed92a89ce10ab77e15dd4f02584302c006fcd97e8",
+    "readerSha256": "1cb6271f5770b10251f597e0c2cdfd017f77e454ea44037f5fa08cfb64899c90"
+  },
+  "new-32-clouds-and-wires-right.webp": {
+    "originalSha256": "201b435dd89e69999d9677776be7073ee383707a25578638e0163875037a3352",
+    "readerSha256": "a03ce173c2dfb190fbaa4c29360792e7156b269971eaa716ea983f689900053a"
+  },
+  "new-46-coastal-tram-wide-left.webp": {
+    "originalSha256": "710f952b11f6ec6a857f7a0355cebb0706e6f3f7893cd65333488bdc2d19b8a1",
+    "readerSha256": "bb4f48ea4da4cc82ca29cf6a900ba164bbdb9df4a1c28e8ada5312c7d9efe0a0"
+  },
+  "new-46-coastal-tram-wide-right.webp": {
+    "originalSha256": "f7d6296b649015b096210c55abb4f5abdf9f0f07c058627d16727200a37f4943",
+    "readerSha256": "bb3d4d0e3705223807631fa305b8f3de569ed96d0135ed5ffaffbece5e98c74d"
+  },
+  "new-35-torii-over-town-left.webp": {
+    "originalSha256": "29645465f756424127716387d1f16e1413ffb0ff06a6cc09c624c9181582c2c5",
+    "readerSha256": "7cad3a93c28a656d457c1a7e3f7e8418f7ac8864d2c509ccd368ed871116b480"
+  },
+  "new-35-torii-over-town-right.webp": {
+    "originalSha256": "952010979ed65f9877f0785352d8c5d25980b5a9e207130803f447ede739df35",
+    "readerSha256": "c0ecb6df44ec82298b84e875eeea02903e2e5c17f15045e595a8a61b09a9fe6b"
+  },
+  "new-37-shrine-basin-left.webp": {
+    "originalSha256": "09f143e2f9e3ec00f80aa8dbdc08fc2cc70e66d8471dc125a9a8c97eb8aca869",
+    "readerSha256": "9a97548b1e1a10893ed0619735d7aa3bec492149f7199ab698439e10ef7d8bf5"
+  },
+  "new-37-shrine-basin-right.webp": {
+    "originalSha256": "74d7f9248317b218e9c7c89eba59c14e62accc0f6ba5d2929666a108030fa39a",
+    "readerSha256": "d553fb8a73798b231c401a814b13f22a36259bcf77cdcd8a4497aa8a3df6e4f4"
+  },
+  "new-36-wooded-approach-left.webp": {
+    "originalSha256": "ae6ad4141437f8f8193f7ef0466c74ea128176a17b485c2c5b156f576c8bb3a0",
+    "readerSha256": "97bcadbbfd4088a3b4d5e9d9cf1b3b9b11ef28ef2740d6030ca76967fd43d1e9"
+  },
+  "new-36-wooded-approach-right.webp": {
+    "originalSha256": "6255c5aa7b9ed44d1826eb9a8c3b848e4c0298810f07577facbe1e08632479dd",
+    "readerSha256": "5408c16af7f502835e9d374ac8be6a1dd36e162fb67aed1c880cb5bd173ef367"
+  },
+  "new-39-sea-through-leaves-left.webp": {
+    "originalSha256": "dbad89219060402501b6843857e5d6219135addf3857223769cbc29130f2f834",
+    "readerSha256": "91f58b359e8007faa228430c93edf88fd851fcc6f8faab589d62d54e5b22c916"
+  },
+  "new-39-sea-through-leaves-right.webp": {
+    "originalSha256": "f1401a0adc38688ee10c0468715eefb6961db470e25c4ebf5a7d71b3779c8bad",
+    "readerSha256": "415ba3fd2f3a66436476999e97bc42ae227e54fbb2bdf25af51e680cfdfda8f4"
+  },
+  "new-40-sea-and-wires-left.webp": {
+    "originalSha256": "cddaefe8bb83571c082f7b9616d6a9733de0016ce114e52c1050f51b4fbaad0c",
+    "readerSha256": "1b953c4459016ad5f6890407722a55abec7664ebfc5ec3fb80ecfd1062fd3b51"
+  },
+  "new-40-sea-and-wires-right.webp": {
+    "originalSha256": "80b4fc606a9321cfe38e0f543c020d3109c4e6088e941d4152c26fe2c166d1a7",
+    "readerSha256": "248399ed1ec1860f5811f50563ef3a6e99cdb4727c5586b3aa1374cc34bcf99e"
+  },
+  "new-38-dragon-garden-left.webp": {
+    "originalSha256": "c7dfb0d05f6efd3c363b1e8b6fd2eef0d035f42f2a98a6054cceb7ff69626c18",
+    "readerSha256": "94cd33fdd4a27a52c39f5ae36779a6de9c3b7506316981ae1ea2645a753f2954"
+  },
+  "new-38-dragon-garden-right.webp": {
+    "originalSha256": "619643cd0dc8e0d5b67064cee98717a21ed09690c5782ed85f0ee5c1c562ce1c",
+    "readerSha256": "87b77a170285e06f4ea800f0a085d3b48c7d70002343dc744fa7412ed9c8663d"
+  },
+  "new-41-rocks-and-sea-left.webp": {
+    "originalSha256": "41e512297b4d54e49f70baa8b1db9a0981c238feda26a7e21ac2f274e453da46",
+    "readerSha256": "b7c4a6fff435da111c26c7871f7df055624f7fddd43b43d0790584300e696422"
+  },
+  "new-41-rocks-and-sea-right.webp": {
+    "originalSha256": "d4a3df65b08dc831d49957b828d0f3d71951308ad07e538e75742ab1a832b205",
+    "readerSha256": "d470f04dcf6d16e75ce7ce89857550191fa3fc15b36b151b8f34fd6c14278114"
+  },
+  "new-33-shoreline-left.webp": {
+    "originalSha256": "75e218b662d05e64ca8d315145a97014a7ebd4878a29dfb61cb3ebef53d2323d",
+    "readerSha256": "cdade802e0055bd4cb1bbc19d1419f9146c20b7b104b6e081d346a1787ad15ee"
+  },
+  "new-33-shoreline-right.webp": {
+    "originalSha256": "41042ef579ae65536bfff672769367b4be92078bedf6d3975cad47001acb91a8",
+    "readerSha256": "927f69e5f8189835d07b70638426f240221466850184c908cf7459189c18d532"
+  },
+  "cover-left.webp": {
+    "originalSha256": "61a1d9b14d9fe864eef297e2a7f39f2722d42488a550939c17a5157b7b945336",
+    "readerSha256": "c4058f748ef251fcd8c7d860710b5c389eef61a6f337cd14e676c2c234f3c67b"
+  }
+}

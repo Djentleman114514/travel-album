@@ -13,6 +13,7 @@ import {
 } from "./drag.js";
 import { constrainTurningPage, settlePage } from "./page-collision.js";
 import "./style.css";
+import { createPageLoader, pageWindow, transitionPages } from "../../singapore/page-loader.js";
 
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
@@ -127,6 +128,10 @@ bookRig.add(flipBook);
 let selectedBook = books[0];
 let loading = false;
 let loadToken = 0;
+let pageLoader = null;
+let retryLoad = null;
+const retryButton = document.querySelector("#retry-pages");
+retryButton.addEventListener("click", () => retryLoad?.());
 let pointerStart = null;
 let lastStatusKey = "";
 const EDGE_PREVIEW_AMOUNT = 0.055;
@@ -188,7 +193,8 @@ function pageMaterial(bookId, source) {
   if (cache.has(source)) return cache.get(source);
 
   const assetUrl = `${import.meta.env.BASE_URL}${source.replace(/^\/+/, "")}`;
-  const request = textureLoader.loadAsync(assetUrl).then((texture) => {
+  const request = textureLoader.loadAsync(assetUrl.replace("assets/pages/", "assets/pages-reader/"))
+    .catch(() => textureLoader.loadAsync(assetUrl)).then((texture) => {
     resizeTextureImage(texture);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = Math.min(
@@ -201,9 +207,9 @@ function pageMaterial(bookId, source) {
     texture.needsUpdate = true;
     return makePaperMaterial(texture);
   }).catch((error) => {
-    document.querySelector("#reader-error").hidden = false;
     console.error("Page artwork failed to load:", source, error);
-    return blankMaterial;
+    cache.delete(source);
+    throw error;
   });
   cache.set(source, request);
   return request;
@@ -218,7 +224,7 @@ function disposeBookMaterials(bookId) {
       if (material === blankMaterial) return;
       material.map?.dispose();
       material.dispose();
-    });
+    }).catch(() => {});
   }
 }
 
@@ -264,8 +270,8 @@ function setLoading(value, copy = readerText.loading) {
   loadingCard.hidden = !value;
   loadingCard.setAttribute("aria-hidden", String(!value));
   loadingCopy.textContent = value ? copy : "";
-  previousButton.disabled = value;
-  nextButton.disabled = value;
+  previousButton.disabled = value || flipBook.currentPage <= 0;
+  nextButton.disabled = value || flipBook.currentPage >= flipBook.totalPages;
 }
 
 function updateLoadingProgress(completed, total) {
@@ -297,19 +303,21 @@ async function selectBook(book, immediate = false) {
   renderLibrary();
   loadingTitle.textContent = bookTitle(book);
   setLoading(true, readerText.preparing(bookTitle(book)));
-  let completedPages = 0;
-  updateLoadingProgress(0, book.pages.length);
+  retryButton.hidden = true;
   resize();
 
-  const pageMaterials = await Promise.all(
-    book.pages.map(async (source) => {
-      const material = await pageMaterial(book.id, source);
-      if (token === loadToken) updateLoadingProgress(++completedPages, book.pages.length);
-      return material;
-    }),
-  );
-  if (token !== loadToken) return;
-
+  // Keep the complete physical stack, but populate its faces only as needed.
+  const pageMaterials = book.pages.map(() => makePaperMaterial());
+  pageLoader = createPageLoader({
+    count: book.pages.length,
+    load: async (index) => {
+      const material = await pageMaterial(book.id, book.pages[index]);
+      if (token !== loadToken) return;
+      pageMaterials[index].map = material.map;
+      pageMaterials[index].needsUpdate = true;
+      requestRender();
+    },
+  });
   flipBook.scale.x = book.ratio;
   // Quick FlipBook stacks sheets downwards from the spine. Lift the whole
   // stack above the desk, including the first turned sheet in long editions.
@@ -329,9 +337,58 @@ async function selectBook(book, immediate = false) {
     }
   });
   rememberBook(book.id);
-  setLoading(false);
+  await waitForPages(pageWindow(0, book.pages.length), () => {});
   updateStatus();
   requestRender();
+}
+
+async function waitForPages(indices, action) {
+  if (!pageLoader) return;
+  const token = loadToken;
+  const loader = pageLoader;
+  if (loader.ready(indices)) {
+    setLoading(false);
+    action();
+    updateStatus();
+    requestRender();
+    return;
+  }
+  setLoading(true);
+  retryButton.hidden = true;
+  updateLoadingProgress(0, indices.length);
+  let completed = 0;
+  let failed = false;
+  try {
+    // Queue the complete urgent batch before tracking individual completions.
+    const batch = loader.ensure(indices);
+    await Promise.all([batch, ...indices.map(index => loader.ensure([index], false).then(() => {
+      if (!failed && token === loadToken) updateLoadingProgress(++completed, indices.length);
+    }))]);
+    if (token !== loadToken) return;
+    document.querySelector("#reader-error").hidden = true;
+    retryLoad = null;
+    setLoading(false);
+    action();
+    updateStatus();
+    requestRender();
+  } catch (error) {
+    failed = true;
+    if (token !== loadToken) return;
+    loadingCopy.textContent = chinese ? "图片加载失败，请重试" : "Pages could not load. Please retry.";
+    retryButton.hidden = false;
+    retryLoad = () => waitForPages(indices, action);
+  }
+}
+
+function navigateToPage(page) {
+  if (loading || pointerStart?.dragging) return;
+  const target = Math.max(0, Math.min(flipBook.totalPages, page));
+  const indices = transitionPages(Math.floor(flipBook.progress), Math.ceil(target / 2), selectedBook.pages.length);
+  void waitForPages(indices, () => {
+    clearEdgePreview(true);
+    flipBook.currentPage = target;
+    requestRender();
+  });
 }
 
 function refreshAllPageNormals() {
@@ -394,6 +451,11 @@ function updateEdgePreview(event) {
     return;
   }
 
+  const needed = transitionPages(sheet, sheet + direction, selectedBook.pages.length);
+  if (!pageLoader?.ready(needed)) {
+    pageLoader?.prefetch(needed);
+    return;
+  }
   if (previewActive && edgePreview.direction !== direction) clearEdgePreview(true);
   edgePreview.baseSheet = sheet;
   edgePreview.direction = direction;
@@ -478,19 +540,11 @@ function takeEdgePreviewForDrag() {
 }
 
 function nextPage() {
-  if (!loading && flipBook.currentPage < flipBook.totalPages) {
-    clearEdgePreview(true);
-    flipBook.nextPage();
-    requestRender();
-  }
+  navigateToPage((Math.ceil(flipBook.currentPage / 2) + 1) * 2);
 }
 
 function previousPage() {
-  if (!loading && flipBook.currentPage > 0) {
-    clearEdgePreview(true);
-    flipBook.previousPage();
-    requestRender();
-  }
+  navigateToPage((Math.ceil(flipBook.currentPage / 2) - 1) * 2);
 }
 
 function updateStatus() {
@@ -510,6 +564,7 @@ function updateStatus() {
   canvas.dataset.left = selectedBook.pages[Math.max(0, shown - 1)] ?? "";
   canvas.dataset.right = selectedBook.pages[shown] ?? "";
   updateEditionStatus(spread, selectedBook);
+  if (!loading) pageLoader?.prefetch(pageWindow(spread, selectedBook.pages.length));
   previousButton.disabled = loading || shown <= 0;
   nextButton.disabled = loading || shown >= total;
 }
@@ -539,6 +594,12 @@ canvas.addEventListener("pointerdown", (event) => {
     ...metrics,
   });
 
+  const direction = preview?.direction ?? chooseDragDirection(sheet, maxSheet, event.clientX, metrics.centerX);
+  const needed = transitionPages(sheet, sheet + direction, selectedBook.pages.length);
+  if (overBook && !pageLoader?.ready(needed)) {
+    void waitForPages(needed, () => {});
+    return;
+  }
   pointerStart = {
     pointerId: event.pointerId,
     x: event.clientX,
@@ -685,9 +746,7 @@ resize();
 renderLibrary();
 setupEdition({ jumpTo: (spread) => {
   if (loading) return false;
-  clearEdgePreview(true);
-  flipBook.currentPage = spread * 2;
-  requestRender();
+  navigateToPage(spread * 2);
   return true;
 } });
 selectBook(books[0], true);

@@ -16,8 +16,9 @@ test("3D Book 2 uses the requested Quick FlipBook lifecycle", () => {
 });
 
 test("reader supports buttons, pointer gestures, and keyboard navigation", () => {
-  assert.match(main, /flipBook\.nextPage\(\)/);
-  assert.match(main, /flipBook\.previousPage\(\)/);
+  assert.match(main, /function nextPage\(\)/);
+  assert.match(main, /function previousPage\(\)/);
+  assert.match(main, /flipBook\.currentPage = target/);
   assert.match(main, /pointerdown/);
   assert.match(main, /pointermove/);
   assert.match(main, /pointerleave/);

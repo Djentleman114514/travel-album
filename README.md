@@ -33,3 +33,20 @@ npm run dev
 - `文件清单.md`：主要文件和目录的用途索引。
 
 来源和许可证：书架使用的上游 MIT 许可证见 `LICENSE-library`；日本相册的第三方许可见 `japan/THIRD_PARTY_NOTICES.md`。
+
+## 阅读器图片与按需加载
+
+两套阅读器共用 `singapore/page-loader.js`：封面入口先加载 5 张页图，随后预取当前位置前后各 2 组跨页，最多同时请求 4 张。翻页所需图片未完成时会等待；跨多页的跳转会先加载动画经过的页面。加载失败可重试，阅读版缺失时自动回退到原有页图。新加坡册从章节链接进入时，只加载目标章节附近的页面；字体不阻塞阅读入口。
+
+`assets/pages-reader/` 保存 Q85 WebP 阅读版，尺寸保持 768 × 1024；原有 `assets/pages/`、放大跨页和原照片图库继续保留。当前页图总量：日本 25.55 → 17.09 MiB，新加坡 11.73 → 8.09 MiB；封面入口的前 5 张分别为 0.83、0.88 MiB。这些是资源体积，不代表线上实测耗时。
+
+更新原有页图或阅读顺序后，用 Python + Pillow 重新生成阅读版：
+
+```sh
+python3 scripts/prepare-reader-pages.py
+npm run build
+npm test
+npm --prefix japan test
+```
+
+导出脚本优先使用能精确复现原 Q92 页图的本地 PNG；没有匹配 PNG 时从现有 WebP 导出，不覆盖原件。当前日本册 24 张、新加坡册 46 张使用 PNG 来源，日本册其余 84 张使用现有 WebP。导出来源报告保存在忽略的 `.work/reader-assets-report.json`；公开的 `pages-reader/manifest.json` 只包含文件哈希，测试会检查阅读版是否与原件版本匹配。阅读版随仓库提交，正常部署不依赖 Pillow 或本地 PNG。
