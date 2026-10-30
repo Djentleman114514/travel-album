@@ -185,7 +185,9 @@ h2 { font-size:22px; font-weight:500; letter-spacing:.06em; margin:9px 0 0; }
 .about-dialog { max-width:560px;width:90vw;padding:30px; }
 .about-dialog p { font-size:13px;line-height:1.95; color:#526665; }
 .about-dialog .credits { color:#8b9896;font-size:11px;margin-top:25px; }
-.loading-card[hidden] { display:none; }
+.loading-card[hidden], .page-wait[hidden] { display:none; }
+.page-wait { position:absolute; z-index:3; left:50%; bottom:102px; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:12px; max-width:90vw; padding:4px 10px; color:#536665; background:#fffffff2; font-size:11px; white-space:nowrap; }
+.page-wait .text-button { font-size:11px; }
 @media(max-width:720px) {
  .masthead { top:24px;left:22px;right:22px;align-items:flex-start; }
  .eyebrow { font-size:8px;letter-spacing:.12em; }

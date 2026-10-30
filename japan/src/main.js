@@ -18,6 +18,8 @@ import { createPageLoader, pageWindow, transitionPages } from "../../singapore/p
 const chinese = document.documentElement.lang.startsWith("zh");
 const readerText = chinese ? {
   loading: "正在准备相册",
+  pageLoading: "正在准备下一页…",
+  pageFailed: "图片加载失败",
   loadingPages: (completed, total) => `正在加载图片 ${completed} / ${total}`,
   preparing: (title) => `正在准备《${title}》`,
   open: (title) => `打开《${title}》`,
@@ -26,6 +28,8 @@ const readerText = chinese ? {
   spread: (current, total) => `${String(current).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
 } : {
   loading: "Preparing edition",
+  pageLoading: "Preparing page…",
+  pageFailed: "Page could not load",
   loadingPages: (completed, total) => `Loading pages ${completed} / ${total}`,
   preparing: (title) => `Preparing ${title}`,
   open: (title) => `Open ${title}`,
@@ -128,9 +132,22 @@ bookRig.add(flipBook);
 let selectedBook = books[0];
 let loading = false;
 let loadToken = 0;
+let waitSequence = 0;
 let pageLoader = null;
 let retryLoad = null;
 const retryButton = document.querySelector("#retry-pages");
+const pageWait = document.querySelector("#page-wait");
+const pageWaitCopy = document.querySelector("#page-wait-copy");
+const pageWaitRetry = document.querySelector("#page-wait-retry");
+const pageWaitCancel = document.querySelector("#page-wait-cancel");
+pageWaitRetry.addEventListener("click", () => retryLoad?.());
+pageWaitCancel.addEventListener("click", () => {
+  waitSequence++;
+  retryLoad = null;
+  setLoading(false);
+  updateStatus();
+  requestRender();
+});
 retryButton.addEventListener("click", () => retryLoad?.());
 let pointerStart = null;
 let lastStatusKey = "";
@@ -264,11 +281,13 @@ function memoizeSheetDeformation() {
   }
 }
 
-function setLoading(value, copy = readerText.loading) {
+function setLoading(value, copy = readerText.loading, initial = true) {
   loading = value;
-  loadingCard.classList.toggle("is-visible", value);
-  loadingCard.hidden = !value;
-  loadingCard.setAttribute("aria-hidden", String(!value));
+  const showOverlay = value && initial;
+  loadingCard.classList.toggle("is-visible", showOverlay);
+  loadingCard.hidden = !showOverlay;
+  loadingCard.setAttribute("aria-hidden", String(!showOverlay));
+  pageWait.hidden = true;
   loadingCopy.textContent = value ? copy : "";
   previousButton.disabled = value || flipBook.currentPage <= 0;
   nextButton.disabled = value || flipBook.currentPage >= flipBook.totalPages;
@@ -300,6 +319,7 @@ async function selectBook(book, immediate = false) {
   clearEdgePreview(true);
   selectedBook = book;
   const token = ++loadToken;
+  waitSequence++;
   renderLibrary();
   loadingTitle.textContent = bookTitle(book);
   setLoading(true, readerText.preparing(bookTitle(book)));
@@ -337,46 +357,70 @@ async function selectBook(book, immediate = false) {
     }
   });
   rememberBook(book.id);
-  await waitForPages(pageWindow(0, book.pages.length), () => {});
+  await waitForPages(pageWindow(0, book.pages.length), () => {}, true);
   updateStatus();
   requestRender();
 }
 
-async function waitForPages(indices, action) {
+function prefetchAroundCurrentPage() {
+  if (!pageLoader || !selectedBook?.pages) return;
+  const spread = Math.ceil((flipBook.currentPage || 0) / 2);
+  pageLoader.prefetch(pageWindow(spread, selectedBook.pages.length, 8));
+}
+
+async function waitForPages(indices, action, initial = false) {
   if (!pageLoader) return;
   const token = loadToken;
+  const waitId = ++waitSequence;
   const loader = pageLoader;
   if (loader.ready(indices)) {
     setLoading(false);
     action();
     updateStatus();
+    prefetchAroundCurrentPage();
     requestRender();
     return;
   }
-  setLoading(true);
+  setLoading(true, readerText.loading, initial);
   retryButton.hidden = true;
-  updateLoadingProgress(0, indices.length);
+  pageWaitRetry.hidden = true;
+  pageWaitCopy.textContent = readerText.pageLoading;
+  if (initial) updateLoadingProgress(0, indices.length);
+  const hintTimer = initial ? null : setTimeout(() => {
+    if (token === loadToken && waitId === waitSequence) pageWait.hidden = false;
+  }, 200);
   let completed = 0;
   let failed = false;
   try {
     // Queue the complete urgent batch before tracking individual completions.
     const batch = loader.ensure(indices);
     await Promise.all([batch, ...indices.map(index => loader.ensure([index], false).then(() => {
-      if (!failed && token === loadToken) updateLoadingProgress(++completed, indices.length);
+      if (initial && !failed && token === loadToken && waitId === waitSequence) {
+        updateLoadingProgress(++completed, indices.length);
+      }
     }))]);
-    if (token !== loadToken) return;
+    if (token !== loadToken || waitId !== waitSequence) return;
     document.querySelector("#reader-error").hidden = true;
     retryLoad = null;
     setLoading(false);
     action();
     updateStatus();
+    prefetchAroundCurrentPage();
     requestRender();
   } catch (error) {
     failed = true;
-    if (token !== loadToken) return;
-    loadingCopy.textContent = chinese ? "图片加载失败，请重试" : "Pages could not load. Please retry.";
-    retryButton.hidden = false;
-    retryLoad = () => waitForPages(indices, action);
+    if (token !== loadToken || waitId !== waitSequence) return;
+    if (initial) {
+      loadingCopy.textContent = chinese ? "图片加载失败，请重试" : "Pages could not load. Please retry.";
+      retryButton.hidden = false;
+    } else {
+      pageWaitCopy.textContent = readerText.pageFailed;
+      pageWaitRetry.hidden = false;
+      pageWait.hidden = false;
+    }
+    retryLoad = () => waitForPages(indices, action, initial);
+  } finally {
+    if (hintTimer !== null) clearTimeout(hintTimer);
   }
 }
 
@@ -564,7 +608,7 @@ function updateStatus() {
   canvas.dataset.left = selectedBook.pages[Math.max(0, shown - 1)] ?? "";
   canvas.dataset.right = selectedBook.pages[shown] ?? "";
   updateEditionStatus(spread, selectedBook);
-  if (!loading) pageLoader?.prefetch(pageWindow(spread, selectedBook.pages.length));
+  if (!loading) prefetchAroundCurrentPage();
   previousButton.disabled = loading || shown <= 0;
   nextButton.disabled = loading || shown >= total;
 }

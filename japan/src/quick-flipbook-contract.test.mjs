@@ -63,8 +63,8 @@ test("reduced motion snaps automatic page turns", () => {
 test("the loading live region is removed from the accessibility tree when idle", () => {
   assert.match(html, /id="loading-card"[^>]*hidden/);
   assert.match(html, /id="loading-card"[^>]*aria-hidden="true"/);
-  assert.match(main, /loadingCard\.hidden = !value/);
-  assert.match(main, /loadingCard\.setAttribute\("aria-hidden", String\(!value\)\)/);
+  assert.match(main, /loadingCard\.hidden = !showOverlay/);
+  assert.match(main, /loadingCard\.setAttribute\("aria-hidden", String\(!showOverlay\)\)/);
   assert.match(main, /loadingCopy\.textContent = value \? copy : ""/);
 });
 

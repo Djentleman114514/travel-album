@@ -485,9 +485,18 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
 
   const pageFiles = [BOOK.frontCover.file, ...BOOK.spreads.flatMap(s => [s.left.file, s.right.file]), BOOK.backCover.file];
   let pagesLoading = true;
+  let waitSequence = 0;
   let retryLoad = null;
   const retryButton = $("#retry-pages");
   retryButton.addEventListener("click", () => retryLoad?.());
+  $("#page-wait-retry").addEventListener("click", () => retryLoad?.());
+  $("#page-wait-cancel").addEventListener("click", () => {
+    waitSequence++;
+    retryLoad = null;
+    pagesLoading = false;
+    $("#page-wait").hidden = true;
+    setNavigationDisabled(false);
+  });
   const pageLoader = createPageLoader({
     count: pageFiles.length,
     load: async (index) => {
@@ -501,41 +510,77 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
       needsRender = true;
     },
   });
-  async function waitForPages(indices, action) {
+  function setNavigationDisabled(value) {
+    const k = spreadIndex();
+    $("#prev").disabled = value || k === 0;
+    $("#next").disabled = value || k === NL;
+  }
+  function prefetchAroundCurrentPage() {
+    pageLoader.prefetch(pageWindow(spreadIndex(), pageFiles.length, 8));
+  }
+  async function waitForPages(indices, action, initial = false) {
+    const waitId = ++waitSequence;
     if (pageLoader.ready(indices)) {
       pagesLoading = false;
       $("#loader").classList.add("done");
       $("#loader").setAttribute("aria-hidden", "true");
+      $("#page-wait").hidden = true;
+      setNavigationDisabled(false);
       action();
+      prefetchAroundCurrentPage();
       return;
     }
     pagesLoading = true;
-    $("#loader").classList.remove("done");
-    $("#loader").setAttribute("aria-hidden", "false");
+    setNavigationDisabled(true);
+    if (initial) {
+      $("#loader").classList.remove("done");
+      $("#loader").setAttribute("aria-hidden", "false");
+    }
+    $("#page-wait").hidden = true;
+    $("#page-wait-copy").textContent = "Preparing page…";
+    $("#page-wait-retry").hidden = true;
     retryButton.hidden = true;
     let completed = 0;
     let failed = false;
-    $("#bar").style.width = "0%";
-    $("#loadtext").textContent = `Loading pages 0 / ${indices.length}`;
+    if (initial) {
+      $("#bar").style.width = "0%";
+      $("#loadtext").textContent = `Loading pages 0 / ${indices.length}`;
+    }
+    const hintTimer = initial ? null : setTimeout(() => {
+      if (waitId === waitSequence) $("#page-wait").hidden = false;
+    }, 200);
     try {
       const batch = pageLoader.ensure(indices);
       await Promise.all([batch, ...indices.map(index => pageLoader.ensure([index], false).then(() => {
-        if (failed) return;
+        if (!initial || failed || waitId !== waitSequence) return;
         completed++;
         $("#bar").style.width = Math.round(completed / indices.length * 100) + "%";
         $("#loadtext").textContent = `Loading pages ${completed} / ${indices.length}`;
       }))]);
+      if (waitId !== waitSequence) return;
       retryLoad = null;
       pagesLoading = false;
       $("#loader").classList.add("done");
       $("#loader").setAttribute("aria-hidden", "true");
+      $("#page-wait").hidden = true;
+      setNavigationDisabled(false);
       action();
+      prefetchAroundCurrentPage();
       needsRender = true;
     } catch {
       failed = true;
-      $("#loadtext").textContent = "Pages could not load. Please retry.";
-      retryButton.hidden = false;
-      retryLoad = () => waitForPages(indices, action);
+      if (waitId !== waitSequence) return;
+      if (initial) {
+        $("#loadtext").textContent = "Pages could not load. Please retry.";
+        retryButton.hidden = false;
+      } else {
+        $("#page-wait-copy").textContent = "Page could not load";
+        $("#page-wait-retry").hidden = false;
+        $("#page-wait").hidden = false;
+      }
+      retryLoad = () => waitForPages(indices, action, initial);
+    } finally {
+      if (hintTimer !== null) clearTimeout(hintTimer);
     }
   }
   function prepareTurn(target, action) {
@@ -865,7 +910,7 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
     const k = spreadIndex();
     if (k === lastK) return;
     lastK = k;
-    if (!pagesLoading) pageLoader.prefetch(pageWindow(k, pageFiles.length));
+    if (!pagesLoading) prefetchAroundCurrentPage();
     $("#label").textContent = SPREADS[k];
     $("#live").textContent = SPREADS[k] + ". " + DESCRIPTIONS[k];
     stage.setAttribute("aria-label", BOOK.title + ". " + SPREADS[k] + ". " + DESCRIPTIONS[k]);
@@ -909,5 +954,5 @@ import { createPageLoader, pageWindow, transitionPages } from "./page-loader.js"
   const requestedId = decodeURIComponent(location.hash.slice(1));
   const requestedIndex = requestedId === "back" ? NL : BOOK.spreads.findIndex(s => s.id === requestedId) + 1;
   boot({ k: requestedIndex });
-  void waitForPages(pageWindow(clamp(requestedIndex, 0, NL), pageFiles.length), () => {});
+  void waitForPages(pageWindow(clamp(requestedIndex, 0, NL), pageFiles.length), () => {}, true);
 })();

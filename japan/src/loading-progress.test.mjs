@@ -11,13 +11,14 @@ function reader() {
   const progress = [];
   let assigned;
   const context = {
-    selectedBook: {}, loadToken: 0, pageLoader: null, loading: false, retryLoad: null,
-    retryButton: { hidden: true }, chinese: false, pointerStart: null,
+    selectedBook: {}, loadToken: 0, waitSequence: 0, pageLoader: null, loading: false, retryLoad: null,
+    retryButton: { hidden: true }, pageWait: { hidden: true }, pageWaitCopy: {}, pageWaitRetry: {}, chinese: false, pointerStart: null,
+    setTimeout, clearTimeout,
     loadingTitle: {}, loadingCopy: {}, loadingPercent: {}, loadingFill: { style: {} },
     loadingProgress: { setAttribute: (_, value) => progress.push(Number(value)) },
-    readerText: { preparing: title => title, loadingPages: (done, total) => `${done}/${total}` },
+    readerText: { preparing: title => title, loading: "Preparing", pageLoading: "Preparing page", pageFailed: "Page failed", loadingPages: (done, total) => `${done}/${total}` },
     bookTitle: book => book.title, document: { querySelector: () => ({ hidden: true }) },
-    setLoading: value => { context.loading = value; },
+    setLoading: (value, _, initial = true) => { context.loading = value; context.overlay = value && initial; context.pageWait.hidden = true; },
     makePaperMaterial: () => ({ map: null }),
     pageMaterial: (_, source) => new Promise((resolve, reject) => pending.set(source, { resolve, reject })),
     createPageLoader, pageWindow, transitionPages,
@@ -51,7 +52,9 @@ test("reader opens after five faces, preserving out-of-order assignments and the
   await loading;
   assert.deepEqual(r.progress, [0, 20, 40, 60, 80, 100]);
   assert.equal(r.context.loading, false);
-  assert.equal(r.pending.size, 5);
+  await setImmediate();
+  assert.ok(r.pending.has("page-5"), "prefetch should begin after opening");
+  assert.ok(!r.pending.has("page-20"), "prefetch should stay within the nearby window");
   assert.equal(r.materials().length, 108);
   assert.deepEqual(Array.from(r.materials().slice(0, 5), m => m.map), book.pages.slice(0, 5));
   assert.equal(r.materials()[5].map, null);
@@ -85,6 +88,7 @@ test("jump waits for every swept face before moving the book", async () => {
   await setImmediate();
   assert.equal(r.context.flipBook.currentPage, 0);
   assert.equal(r.context.loading, true);
+  assert.equal(r.context.overlay, false, "reading must keep the current spread visible");
   for (let i = 5; i <= 12; i++) { r.resolve(`page-${i}`); await setImmediate(); }
   assert.equal(r.context.flipBook.currentPage, 12);
   assert.equal(r.context.loading, false);
