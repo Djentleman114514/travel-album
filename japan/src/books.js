@@ -113,7 +113,7 @@ export const books = [
       "assets/pages/new-41-rocks-and-sea-right.webp",
       "assets/pages/new-33-shoreline-left.webp",
       "assets/pages/new-33-shoreline-right.webp",
-      "assets/pages/cover-left.webp"
+      "assets/pages/cover-left-tokyo-tower.webp"
     ],
     "chapters": [
       {
